@@ -1,0 +1,16 @@
+{
+  "source": "Unity",
+  "applications": [
+    {
+      "app_key": "application.generated.unity.naumannmarcovrba.exe",
+      "launch_type": "url",
+      "url": "steam://launch/",
+      "action_manifest_path": "C:\\Users\\Robot eHMI\\MarcoNaumann\\NaumannMarco - VR - BA\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "strings": {
+        "en_us": {
+          "name": "NaumannMarco - VR - BA [Testing]"
+        }
+      }
+    }
+  ]
+}
