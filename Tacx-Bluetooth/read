@@ -1,0 +1,36 @@
+
+
+async def tacx_connector(address):
+    async with BleakClient(address) as client:
+        async def my_page_handler(data):
+            print(data)
+            asyncio.ensure_future(send_update(data))
+
+        # Check if the client is not connected and connect it if necessary
+        if not client.is_connected:
+            await client.connect()
+
+        trainer = TacxTrainerControl(client=client)
+        # trainer.set_specific_trainer_data_page_handler(my_page_handler)
+        trainer.set_general_fe_data_page_handler(my_page_handler)
+        await trainer.enable_fec_notifications()
+        await trainer.set_basic_resistance(0)
+
+async def send_update(data):
+    # Send update to all connected WebSocket clients
+    if connected_clients:
+        await asyncio.wait([client.send(data) for client in connected_clients])
+
+
+
+async def main():
+    start_server = websockets.serve(handle_connections, "localhost", PORT)
+    tacx_connection = tacx_connector(TACX_BLTH_ADDRESS)
+        
+    await asyncio.gather(
+        start_server,
+        tacx_connection,
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
