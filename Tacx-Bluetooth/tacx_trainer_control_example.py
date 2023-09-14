@@ -14,9 +14,9 @@ async def run(address):
         trainer.set_specific_trainer_data_page_handler(my_page_handler)
         trainer.set_general_fe_data_page_handler(my_page_handler)
         await trainer.enable_fec_notifications()
-        await trainer.set_basic_resistance(20)
+        await trainer.set_basic_resistance(0)
         await asyncio.sleep(20.0)
-        await trainer.set_basic_resistance(40)
+        await trainer.set_basic_resistance(200)
         await asyncio.sleep(20.0)
         await trainer.disable_fec_notifications()
 

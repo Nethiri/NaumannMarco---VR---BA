@@ -2,6 +2,7 @@ import asyncio
 import websockets
 from pycycling.tacx_trainer_control import TacxTrainerControl
 import bleak
+from bleak import BleakScanner
 
 PORT = 8057
 TACX_DEVICE_NAME = "Tacx Neo 2 28482"
@@ -63,16 +64,35 @@ async def tacx_connector(address):
 
 async def main():
     try:
-        address = await bleak.discover()
-        address = address.address
-        server = await websockets.serve(handle_connections, "localhost", PORT)
-        tacx = await tacx_connector(address)
+        print(f"Scanning for BLE device with name {TACX_DEVICE_NAME}...")
+        devices = await BleakScanner.discover()
+        address = None
 
-        await server.wait_closed()
+        for device in devices:
+            if device.name == TACX_DEVICE_NAME:
+                address = device.address
+                break
+
+        if address:
+            print(f"Found device {TACX_DEVICE_NAME} with address {address}")
+            server = await websockets.serve(handle_connections, "localhost", PORT)
+            tacx = await tacx_connector(address)
+
+            # Listen for keyboard input asynchronously
+            print("Press 'c' and Enter to stop...")
+            while True:
+                user_input = await asyncio.to_thread(input)
+                if user_input.lower() == 'c':
+                    break  # Exit the loop and stop the program
+            
+            await server.wait_closed()
+        else:
+            print(f"Device {TACX_DEVICE_NAME} not found")
     except Exception as ex:
         print("ERROR!")
         print(ex)
         return
+
 
 if __name__ == "__main__":
     asyncio.run(main())
