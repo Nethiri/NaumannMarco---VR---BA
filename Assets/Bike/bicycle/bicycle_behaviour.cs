@@ -11,8 +11,12 @@ public class bicycle_behaviour : MonoBehaviour
     [SerializeField] float jumpForce = 2.5f;
     [SerializeField] float rotationDegPerSecond = 90f;
 
+    //webhook for bycicle controals
+    private string webhookEndPoint = "";
+
     void Start()
     {
+        //StartCoroutine(SubscribeToWebhook());
         Debug.Log("Bike movement inits");
         rb = GetComponent<Rigidbody>();
     }
@@ -42,8 +46,24 @@ public class bicycle_behaviour : MonoBehaviour
         //horizontalInpout * movementSpeed * Mathf.Sin(rb.rotation.y)
         if (Input.GetKey(KeyCode.Q)) { rb.rotation *= Quaternion.Euler(0f, -(rotationDegPerSecond * Time.deltaTime), 0f); }
         if (Input.GetKey(KeyCode.E)) { rb.rotation *= Quaternion.Euler(0f, rotationDegPerSecond * Time.deltaTime, 0f); }
+    }
 
+    IEnumerator SubscribeToWebhook()
+    {
+        string jsonData = "{\"event\": \"subscribe\"}";
 
+        UnityWebRequest request = UnityWebRequest.Post(webhookEndPoint, jsonData);
+        request.SetRequestHeader("Content-Type", "application/json");
 
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("Failed to subscribe to Webhook: " + request.error);
+        }
+        else
+        {
+            Debug.Log("Successfully subscribed to webhook.");
+        }
     }
 }
