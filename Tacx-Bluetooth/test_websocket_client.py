@@ -9,9 +9,10 @@ async def receive_updates():
         while True:
             # Receive and print updates from the server
             message = await websocket.recv()
-            print(f"Received: {message}")
-            match = re.search(pattern, message)
-            print(f"Speed: {match.group(1)}" )
+            print(message)
+            #print(f"Received: {message}")
+            #match = re.search(pattern, message)
+            #print(f"Speed: {match.group(1)}" )
 
 async def input_listener():
     while True:

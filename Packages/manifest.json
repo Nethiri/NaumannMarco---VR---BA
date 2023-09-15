@@ -16,7 +16,7 @@
     "com.unity.xr.mock-hmd": "1.3.1-preview.1",
     "com.unity.xr.oculus": "3.2.3",
     "com.unity.xr.openxr": "1.6.0",
-    "com.unity.xr.picoxr": "file:D:/OneDrive/Studium/BA/Unity/PICO Unity Integration SDK 230",
+    "com.unity.xr.picoxr": "file:D:/BA-Projekt/Extern-Packages/PICO Unity Integration SDK 230",
     "com.valvesoftware.unity.openvr": "file:../Assets/SteamVR/OpenVRUnityXRPackage/Editor/com.valvesoftware.unity.openvr-1.1.4.tgz",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",

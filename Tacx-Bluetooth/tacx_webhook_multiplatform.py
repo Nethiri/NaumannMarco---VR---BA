@@ -3,6 +3,7 @@ import websockets
 from pycycling.tacx_trainer_control import TacxTrainerControl
 import bleak
 from bleak import BleakScanner
+import json
 
 PORT = 8057
 TACX_DEVICE_NAME = "Tacx Neo 2 28482"
@@ -26,7 +27,12 @@ async def send_update(data):
     # Send update to all connected WebSocket clients
     if connected_clients:
         for client in connected_clients:
-            await client.send(str(data))
+            dataPackage = {
+                "elapsed_time": data.elapsed_time,
+                "distance_travelled": data.distance_travelled,
+                "speed": data.speed,
+            }
+            await client.send(json.dumps(dataPackage))
             # print("Send some Data!")
 
 def package_handler(data):
@@ -48,11 +54,11 @@ async def tacx_connector(address):
             await trainer.set_basic_resistance(0)
             stop_event = asyncio.Event()
 
-            async def send_packages():
+            async def package_send_keep_alive_task():
                 while not stop_event.is_set():
                     await asyncio.sleep(0)
 
-            package_sender_task = asyncio.create_task(send_packages())
+            package_sender_task = asyncio.create_task(package_send_keep_alive_task())
             await package_sender_task
             await trainer.disable_fec_notifications()
     except Exception as ex:
