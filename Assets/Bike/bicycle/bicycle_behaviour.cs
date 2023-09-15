@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -12,27 +13,40 @@ public class bicycle_behaviour : MonoBehaviour
     [SerializeField] float rotationDegPerSecond = 90f;
 
     //webhook for bycicle controals
-    private string webhookEndPoint = "";
+    [SerializeField] string serverAddress = "http://localhost:8057/";
+    [Serializable] public class BikeData
+    {
+        public float last_update;
+        public float elapsed_time;
+        public float distance_travelled;
+        public float speed;
+    }
+
+    BikeData DATAPACKAGE;
+
+
+    bool canRequestData = true; // Controls if we can make a request to the server
+    float requestDataInterval = 0.5f; // Interval to request data from the server (every 0.5 seconds)
 
     void Start()
     {
-        //StartCoroutine(SubscribeToWebhook());
-        Debug.Log("Bike movement inits");
         rb = GetComponent<Rigidbody>();
+        StartCoroutine(GetBikeDataPeriodically());
+        DATAPACKAGE = new BikeData();
+        DATAPACKAGE.speed = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-
         //Debug.Log("Player has been updated: " + test_number.ToString() + " times.");
         //test_number++;
         if (Input.GetButtonDown("Jump"))
         {
             rb.velocity = new Vector3(x: rb.velocity.x, y: jumpForce, z: rb.velocity.z);
         }
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
+        float horizontalInput = Input.GetAxis("Horizontal") ; //up/down
+        float verticalInput = Input.GetAxis("Vertical") + DATAPACKAGE.speed;
 
         float xVal = Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed + Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
         float yVal = Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed - Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
@@ -46,24 +60,44 @@ public class bicycle_behaviour : MonoBehaviour
         //horizontalInpout * movementSpeed * Mathf.Sin(rb.rotation.y)
         if (Input.GetKey(KeyCode.Q)) { rb.rotation *= Quaternion.Euler(0f, -(rotationDegPerSecond * Time.deltaTime), 0f); }
         if (Input.GetKey(KeyCode.E)) { rb.rotation *= Quaternion.Euler(0f, rotationDegPerSecond * Time.deltaTime, 0f); }
+
+        // Debug.Log(DATAPACKAGE);
+
+
     }
 
-    IEnumerator SubscribeToWebhook()
+    IEnumerator GetBikeDataPeriodically()
     {
-        string jsonData = "{\"event\": \"subscribe\"}";
-
-        UnityWebRequest request = UnityWebRequest.Post(webhookEndPoint, jsonData);
-        request.SetRequestHeader("Content-Type", "application/json");
-
-        yield return request.SendWebRequest();
-
-        if (request.result != UnityWebRequest.Result.Success)
+        while (true)
         {
-            Debug.LogError("Failed to subscribe to Webhook: " + request.error);
-        }
-        else
-        {
-            Debug.Log("Successfully subscribed to webhook.");
+            if (canRequestData)
+            {
+                // Make a request to the server
+                StartCoroutine(GetBikeDataFromServer());
+            }
+
+            // Wait for the desired interval before making the next request
+            yield return new WaitForSeconds(requestDataInterval);
         }
     }
+
+
+    IEnumerator GetBikeDataFromServer()
+    {
+        using (UnityWebRequest www = UnityWebRequest.Get(serverAddress))
+        {
+            yield return www.SendWebRequest();
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                // Parse the received JSON string into a BikeData object
+                BikeData bikeData = JsonUtility.FromJson<BikeData>(www.downloadHandler.text);
+                DATAPACKAGE = bikeData;
+            }
+            else
+            {
+                Debug.LogError("Error " + www.error);
+            }
+        }
+    }
+
 }

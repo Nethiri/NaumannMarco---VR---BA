@@ -77,7 +77,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.pico.livepreview": {
-      "version": "file:D:/OneDrive/Studium/BA/Unity/PICO Unity Live Preview Plugin (Experiment)",
+      "version": "file:D:/BA-Projekt/Extern-Packages/PICO Unity Live Preview Plugin (Experiment)",
       "depth": 0,
       "source": "local",
       "dependencies": {
