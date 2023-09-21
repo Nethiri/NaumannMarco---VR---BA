@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Text;
 
 public class bicycle_behaviour : MonoBehaviour
 {
@@ -11,7 +12,7 @@ public class bicycle_behaviour : MonoBehaviour
     [SerializeField] float movementSpeed = 5f;
     [SerializeField] float jumpForce = 2.5f;
     [SerializeField] float rotationDegPerSecond = 90f;
-
+     
     //webhook for bycicle controals
     [SerializeField] string serverAddress = "http://localhost:8057/";
     [Serializable] public class BikeData
@@ -20,6 +21,7 @@ public class bicycle_behaviour : MonoBehaviour
         public float elapsed_time;
         public float distance_travelled;
         public float speed;
+        public int basic_resistance;
     }
 
     BikeData DATAPACKAGE;
@@ -40,11 +42,12 @@ public class bicycle_behaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Debug.Log("Player has been updated: " + test_number.ToString() + " times.");
-        //test_number++;
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump")) //dumb test 
         {
-            rb.velocity = new Vector3(x: rb.velocity.x, y: jumpForce, z: rb.velocity.z);
+            //rb.velocity = new Vector3(x: rb.velocity.x, y: jumpForce, z: rb.velocity.z);
+            int newVal = DATAPACKAGE.basic_resistance + 10;
+            if(newVal > 200) { newVal = 0; }
+            StartCoroutine(SendResistanceToServer(newVal));
         }
         float horizontalInput = Input.GetAxis("Horizontal") ; //up/down
         float verticalInput = Input.GetAxis("Vertical") + DATAPACKAGE.speed;
@@ -63,11 +66,18 @@ public class bicycle_behaviour : MonoBehaviour
         if (Input.GetKey(KeyCode.Q)) { rb.rotation *= Quaternion.Euler(0f, -(rotationDegPerSecond * Time.deltaTime), 0f); }
         if (Input.GetKey(KeyCode.E)) { rb.rotation *= Quaternion.Euler(0f, rotationDegPerSecond * Time.deltaTime, 0f); }
 
+        
+    }
+
+    void printDebugData()
+    {
         if (DATAPACKAGE.speed > curMaxSpeed)
         {
             curMaxSpeed = DATAPACKAGE.speed;
         }
-        Debug.Log("Current speed = " + DATAPACKAGE.speed.ToString() + ", Current Max Speed = " + curMaxSpeed.ToString());  
+        Debug.Log("Current speed = " + DATAPACKAGE.speed.ToString() +
+            ", Current Max Speed = " + curMaxSpeed.ToString() +
+            ", Reistance = " + DATAPACKAGE.basic_resistance.ToString());
     }
 
     IEnumerator GetBikeDataPeriodically()
@@ -79,7 +89,6 @@ public class bicycle_behaviour : MonoBehaviour
                 // Make a request to the server
                 StartCoroutine(GetBikeDataFromServer());
             }
-
             // Wait for the desired interval before making the next request
             yield return new WaitForSeconds(requestDataInterval);
         }
@@ -96,6 +105,8 @@ public class bicycle_behaviour : MonoBehaviour
                 // Parse the received JSON string into a BikeData object
                 BikeData bikeData = JsonUtility.FromJson<BikeData>(www.downloadHandler.text);
                 DATAPACKAGE = bikeData;
+
+                printDebugData();
             }
             else
             {
@@ -103,5 +114,33 @@ public class bicycle_behaviour : MonoBehaviour
             }
         }
     }
+
+    IEnumerator SendResistanceToServer(int resistanceValue)
+    {
+        string url = serverAddress + "set_resistance";
+
+        // Create a JSON object with the resistance value
+        string jsonData = "{\"resistance\":" + resistanceValue.ToString() + "}";
+
+        using (UnityWebRequest www = new UnityWebRequest(url, "POST"))
+        {
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+            www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            www.downloadHandler = new DownloadHandlerBuffer();
+            www.SetRequestHeader("Content-Type", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log("Resistance set to " + resistanceValue);
+            }
+            else
+            {
+                Debug.LogError("Error sending resistance: " + www.error);
+            }
+        }
+    }
+
 
 }

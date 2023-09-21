@@ -2962,7 +2962,7 @@ Transform:
   m_GameObject: {fileID: 1393869044}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 10}
+  m_LocalScale: {x: 1000, y: 1, z: 1000}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -3841,6 +3841,7 @@ MonoBehaviour:
   movementSpeed: 5
   jumpForce: 2.5
   rotationDegPerSecond: 90
+  serverAddress: http://localhost:8057/
 --- !u!54 &919132149212296836
 Rigidbody:
   m_ObjectHideFlags: 0
