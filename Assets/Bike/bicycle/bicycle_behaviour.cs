@@ -23,6 +23,7 @@ public class bicycle_behaviour : MonoBehaviour
     }
 
     BikeData DATAPACKAGE;
+    float curMaxSpeed = 0;
 
 
     bool canRequestData = true; // Controls if we can make a request to the server
@@ -51,6 +52,7 @@ public class bicycle_behaviour : MonoBehaviour
         float xVal = Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed + Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
         float yVal = Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed - Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
 
+
         rb.velocity = new Vector3(
             x: xVal,
             y: rb.velocity.y,
@@ -61,9 +63,11 @@ public class bicycle_behaviour : MonoBehaviour
         if (Input.GetKey(KeyCode.Q)) { rb.rotation *= Quaternion.Euler(0f, -(rotationDegPerSecond * Time.deltaTime), 0f); }
         if (Input.GetKey(KeyCode.E)) { rb.rotation *= Quaternion.Euler(0f, rotationDegPerSecond * Time.deltaTime, 0f); }
 
-        // Debug.Log(DATAPACKAGE);
-
-
+        if (DATAPACKAGE.speed > curMaxSpeed)
+        {
+            curMaxSpeed = DATAPACKAGE.speed;
+        }
+        Debug.Log("Current speed = " + DATAPACKAGE.speed.ToString() + ", Current Max Speed = " + curMaxSpeed.ToString());  
     }
 
     IEnumerator GetBikeDataPeriodically()

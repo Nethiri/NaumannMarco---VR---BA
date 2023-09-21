@@ -66,7 +66,7 @@ async def find_device(name):
         return None
 
 async def handle(request):
-    print("Received a GET request.")
+    #print("Received a GET request.")
     return web.Response(text=json.dumps(DATAPACKAGE), content_type="application/json")
 
 async def keepAlliveEvent():
