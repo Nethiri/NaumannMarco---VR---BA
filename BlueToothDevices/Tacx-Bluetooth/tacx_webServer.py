@@ -100,6 +100,7 @@ async def keepAlliveEvent():
     while True:
         await asyncio.sleep(0)
 
+
 async def main():
     address = await find_device(TACX_DEVICE_NAME)
     trainer = await tacx_connector(address=address)
