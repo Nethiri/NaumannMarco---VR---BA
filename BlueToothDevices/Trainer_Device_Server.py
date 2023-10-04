@@ -201,6 +201,8 @@ async def keepAlliveEvent():
             break
 
 #===WEBSERVER===
+#http://localhost:8057/
+#http://localhost:8057/set_resistance
 async def serve_get_request(request):
     return web.Response(text=json.dumps(DATAPACKAGE), content_type="application/json", status=200)
 
@@ -242,7 +244,7 @@ async def main():
     app = web.Application()
     app.router.add_get('/', serve_get_request)
     app.router.add_post('/set_resistance', lambda request: set_resistance(request, tacx_client))
-    runner = web.Application(app)
+    runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', PORT)
     await site.start()
@@ -261,6 +263,8 @@ async def main():
     if eliteStatus == True:
         await elite_disable_data_package_handler(elite_client)
         await elite_client.disconnect()
+    
+    await site.stop()
 
     print("Byeeeeeeeeeee!")
 
