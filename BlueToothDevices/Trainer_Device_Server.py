@@ -9,7 +9,6 @@ from datetime import datetime
 from aiohttp import web
 
 #Trainer Devices:
-
 #Tax Trainer
 tacxStatus = True
 #Elite Stero
@@ -36,6 +35,9 @@ DATAPACKAGE = {
     "break_back": None
 }
 
+#Website
+PORT = 8057
+
 #function that is called every time the tacx sends a notification to the server
 def tacx_package_handler(data):
     global DATAPACKAGE
@@ -50,7 +52,7 @@ def elite_package_handler(data):
     global DATAPACKAGE
     DATAPACKAGE["elite_angle"] = data
     DATAPACKAGE["elite_last_update"] = time.time()
-    print(data)
+    #print(data)
 
 
 #Function to Resolve a device name to an appropriate address
@@ -73,6 +75,7 @@ async def find_device(name):
         print(f"Device {name} not found")
         return None
 
+#=== TACX ===
 #Function to connect to the Tacx trainer
 async def tacx_connect(address=None):
     #check if address is existent
@@ -109,10 +112,15 @@ async def tacx_get_trainer(client: bleak.BleakClient):
 
 async def tacx_set_resistance(resistance, client):
     if 0 <= resistance <= 200:
-        trainer: TacxTrainerControl = await tacx_get_trainer(client)
-        await trainer.set_basic_resistance(resistance=resistance)
-        DATAPACKAGE["tacx_basic_resistance"] = resistance
-        return True
+        try:
+            trainer: TacxTrainerControl = await tacx_get_trainer(client)
+            await trainer.set_basic_resistance(resistance=resistance)
+            DATAPACKAGE["tacx_basic_resistance"] = resistance
+            return True
+        except Exception as ex:
+            print("ERROR WHILE TRYING TO SET RESISTANCE!")
+            print(ex)
+            return False
     else:
         print(f"Resistance: {resistance} is outside of acceptable values 0-200")
         return False
@@ -131,7 +139,7 @@ async def tacx_disable_data_package_hanlder(client):
     trainer: TacxTrainerControl = await tacx_get_trainer(client)
     await trainer.disable_fec_notifications()
 
-
+#==ELITE===
 async def elite_connect(address=None): 
     #check if address is existent
     if address is None:
@@ -192,7 +200,35 @@ async def keepAlliveEvent():
         if user_input.lower() == 'c':
             break
 
+#===WEBSERVER===
+async def serve_get_request(request):
+    return web.Response(text=json.dumps(DATAPACKAGE), content_type="application/json", status=200)
+
+async def set_resistance(request, trainer_client):
+    if(tacxStatus == False):
+        return web.Response(text=f"Error: Tacx device is not setup! tacxStatus=false", status=400)
+    
+    try:
+        if trainer_client is None:
+            return web.Response(text=f"Error: trainer_client is None!", status=400)
+        data = await request.json()
+        resistance = 0
+        resistance = int(data.get('resistance'))
+        if resistance is not None:
+            resistance = int(resistance)
+            if tacx_set_resistance(resistance=resistance, client=trainer_client) == False:
+                return web.Response(text=f"Value could not be set! Only accepting 0-200! Or check console for other error!", status=400)
+            return web.Response(text=f"Resistance set to: {resistance}", content_type="text/plain", status=200)
+        else:
+            return web.Response(text=f"resistance value was None!", status=400)
+    except Exception as ex:
+        print(ex)
+        return web.Response(text=f"Error: {str(ex)}", content_type="text/plain", status=400)
+
 async def main():
+    tacx_client = None
+    elite_client = None
+    #Start
     if tacxStatus == True:
         tacx_client = await tacx_connect()
         await tacx_set_data_page_handler(tacx_client)
@@ -202,6 +238,15 @@ async def main():
         elite_client = await elite_connect()
         await elite_set_data_page_handler(elite_client)
     
+    #WebServer
+    app = web.Application()
+    app.router.add_get('/', serve_get_request)
+    app.router.add_post('/set_resistance', lambda request: set_resistance(request, tacx_client))
+    runner = web.Application(app)
+    await runner.setup()
+    site = web.TCPSite(runner, 'localhost', PORT)
+    await site.start()
+    print(f"HTTP server started up on port {PORT}")
 
     #Create a task for the keepAlliveEvent coroutine
     keepAllive = asyncio.create_task(keepAlliveEvent())
