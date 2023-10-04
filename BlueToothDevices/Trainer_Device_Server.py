@@ -11,9 +11,9 @@ from aiohttp import web
 #Trainer Devices:
 
 #Tax Trainer
-taxStatus = False
+tacxStatus = True
 #Elite Stero
-eliteStatus = False
+eliteStatus = True
 #Break Arduino
 breakStatus = False
 
@@ -193,12 +193,14 @@ async def keepAlliveEvent():
             break
 
 async def main():
-    tacx_client = await tacx_connect()
-    await tacx_set_data_page_handler(tacx_client)
-    await tacx_set_resistance(client=tacx_client, resistance=10)
+    if tacxStatus == True:
+        tacx_client = await tacx_connect()
+        await tacx_set_data_page_handler(tacx_client)
+        await tacx_set_resistance(client=tacx_client, resistance=10)
     
-    elite_client = await elite_connect()
-    await elite_set_data_page_handler(elite_client)
+    if eliteStatus == True:
+        elite_client = await elite_connect()
+        await elite_set_data_page_handler(elite_client)
     
 
     #Create a task for the keepAlliveEvent coroutine
@@ -206,11 +208,14 @@ async def main():
     await asyncio.gather(keepAllive)
 
     #what happens after the keepallive has been ended... eg programm shuts down
-    await tacx_disable_data_package_hanlder(tacx_client)
-    await tacx_set_resistance(client=tacx_client, resistance=0)
-    await tacx_client.disconnect()
-    await elite_disable_data_package_handler(elite_client)
-    await elite_client.disconnect()
+    if tacxStatus == True:
+        await tacx_disable_data_package_hanlder(tacx_client)
+        await tacx_set_resistance(client=tacx_client, resistance=0)
+        await tacx_client.disconnect()
+    
+    if eliteStatus == True:
+        await elite_disable_data_package_handler(elite_client)
+        await elite_client.disconnect()
 
     print("Byeeeeeeeeeee!")
 
