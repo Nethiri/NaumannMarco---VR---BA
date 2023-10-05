@@ -85,7 +85,11 @@ async def tacx_connect(address=None):
     #check if address is existent
     if address is None:
         address = await find_device(TACX_DEVICE_NAME)
-    
+
+    if address is None: 
+        print("Connection to elite abborted!")
+        return False
+
     try:
         client = bleak.BleakClient(address)
         await client.connect()
@@ -102,6 +106,10 @@ async def tacx_connect(address=None):
         return False
     
 async def tacx_get_trainer(client: bleak.BleakClient):
+    if client == False:
+        print("Couldnt get tacx")
+        return False
+
     if client.is_connected == False:
         print(f"Lost connection to Tacx device somewhere... trying to resolve")
         connected_client = await tacx_connect()
@@ -132,7 +140,7 @@ async def tacx_set_resistance(resistance, client):
     
 async def tacx_set_data_page_handler(client):
     trainer: TacxTrainerControl = await tacx_get_trainer(client)
-    if trainer is not None:
+    if trainer is not False:
         trainer.set_general_fe_data_page_handler(tacx_package_handler)
         await trainer.enable_fec_notifications()
         return True
@@ -142,13 +150,18 @@ async def tacx_set_data_page_handler(client):
 
 async def tacx_disable_data_package_hanlder(client):
     trainer: TacxTrainerControl = await tacx_get_trainer(client)
-    await trainer.disable_fec_notifications()
+    if trainer is not False:
+        await trainer.disable_fec_notifications()
 
 #===ELITE===
 async def elite_connect(address=None): 
     #check if address is existent
     if address is None:
         address = await find_device(ELITE_DEVICE_NAME)
+        
+    if address is None: 
+        print("Connection to elite abborted!")
+        return False
 
     try:
         client = bleak.BleakClient(address)
@@ -166,6 +179,10 @@ async def elite_connect(address=None):
         return False
     
 async def elite_get_sterzo(client: bleak.BleakClient):
+    if client == False:
+        print("Couldnt get sterzo")
+        return False
+
     if client.is_connected == False:
         print(f"Lost connection to Elte device somewhere... trying to resolve")
         connected_client = await elite_connect()
@@ -180,7 +197,7 @@ async def elite_get_sterzo(client: bleak.BleakClient):
 
 async def elite_set_data_page_handler(client):
     sterzo: Sterzo = await elite_get_sterzo(client)
-    if sterzo is not None:
+    if sterzo is not False:
         sterzo.set_steering_measurement_callback(elite_package_handler)
         await sterzo.enable_steering_measurement_notifications()
         return True
@@ -190,7 +207,8 @@ async def elite_set_data_page_handler(client):
     
 async def elite_disable_data_package_handler(client):
     sterzo: Sterzo = await elite_get_sterzo(client)
-    await sterzo.disable_steering_measurement_notifications()
+    if sterzo is not False:
+        await sterzo.disable_steering_measurement_notifications()
 
 async def keepAllive_async_input(prompt):
     loop = asyncio.get_event_loop()
@@ -215,7 +233,8 @@ def arduino_find_port():
     if arduino_ports:
         return arduino_ports[0]
     else:
-        raise Exception("Arduino not found! Check connection and try again!")
+        print("Arduino not found! Check connection and try again!")
+        return None
     
 #async def arduino_task(arduino_port):
 #    arduino_serial = serial.Serial(arduino_port, ARDUINO_BAUD_RATE)
@@ -299,36 +318,33 @@ async def main():
     if arduinoStatus == True:
         print("Setup Ardunino")
         arduino_port = arduino_find_port()
-        arduino_task_instance = asyncio.create_task(arduino_task(arduino_port=arduino_port))
-        taskContainer.append(arduino_task_instance)
-        print("Arduino task is running...")
-
+        if arduino_port is not None:
+            asyncio.create_task(arduino_task(arduino_port=arduino_port))
+            print("Arduino task is running...")
+        else:
+            print("Arduino failed to get setup!")
 
     #WebServer
     app = web.Application()
-    print("Test3")
     app.router.add_get('/', serve_get_request)
     app.router.add_post('/set_resistance', lambda request: set_resistance(request, tacx_client))
-    print("Test4")
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', PORT)
-    print("Test5")
     await site.start()
     print(f"HTTP server started up on port {PORT}")
-    print("Test6")
 
     #Create a task for the keepAlliveEvent coroutine
     keepAllive = asyncio.create_task(keepAlliveEvent())
     await asyncio.gather(keepAllive)
 
     #what happens after the keepallive has been ended... eg programm shuts down
-    if tacxStatus == True:
+    if tacxStatus is True and tacx_client is not False:
         await tacx_disable_data_package_hanlder(tacx_client)
         await tacx_set_resistance(client=tacx_client, resistance=0)
         await tacx_client.disconnect()
     
-    if eliteStatus == True:
+    if eliteStatus is True and elite_client is not False:
         await elite_disable_data_package_handler(elite_client)
         await elite_client.disconnect()
     
