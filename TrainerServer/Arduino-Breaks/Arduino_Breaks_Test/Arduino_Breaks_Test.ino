@@ -20,8 +20,8 @@ void loop() {
   long sum = 0;
   for(int i=0; i < 100; ++i) sum += (long)analogRead(A0);
   val = int(sum / 100);
-  Serial.println("{'back': " +  String(val) + ", 'front': "+ String(val) + "}");
-  delay(50);
+  Serial.println("{\"back\": " +  String(val) + ", \"front\": "+ String(val) + "}");
+  delay(1);
 }
 
 //{'resistance': 10, 'test': 10}

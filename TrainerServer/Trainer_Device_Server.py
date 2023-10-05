@@ -5,8 +5,11 @@ import time
 from pycycling.tacx_trainer_control import TacxTrainerControl
 from pycycling.sterzo import Sterzo
 import os
+import serial
+import serial.tools.list_ports
 from datetime import datetime
 from aiohttp import web
+
 
 #Trainer Devices:
 #Tax Trainer
@@ -14,12 +17,13 @@ tacxStatus = True
 #Elite Stero
 eliteStatus = True
 #Break Arduino
-breakStatus = False
+arduinoStatus = True
 
 #Tax and Elite are connected via Bluetooth
 #their respective clear names (device names) are stored and used in global
 TACX_DEVICE_NAME = "Tacx Neo 2 28482"
 ELITE_DEVICE_NAME = "STERZO"
+ARDUINO_BAUD_RATE = 9600
 
 #Global variable Datapackage
 #this variable is shipped on request and edited live
@@ -140,7 +144,7 @@ async def tacx_disable_data_package_hanlder(client):
     trainer: TacxTrainerControl = await tacx_get_trainer(client)
     await trainer.disable_fec_notifications()
 
-#==ELITE===
+#===ELITE===
 async def elite_connect(address=None): 
     #check if address is existent
     if address is None:
@@ -201,6 +205,55 @@ async def keepAlliveEvent():
         if user_input.lower() == 'c':
             break
 
+#===Arduino===
+def arduino_find_port(): 
+    arduino_ports = [ 
+        p.device
+        for p in serial.tools.list_ports.comports()
+        if 'Arduino' in p.description
+    ]
+    if arduino_ports:
+        return arduino_ports[0]
+    else:
+        raise Exception("Arduino not found! Check connection and try again!")
+    
+#async def arduino_task(arduino_port):
+#    arduino_serial = serial.Serial(arduino_port, ARDUINO_BAUD_RATE)
+#    while True:
+#        try:
+#            data_string = arduino_serial.readline().decode('utf-8').strip()
+#            data = eval(data_string)
+#            global DATAPACKAGE
+#            DATAPACKAGE["break_back"] = data.get("back")
+#            DATAPACKAGE["break_front"] = data.get("front")
+#        except Exception as ex:
+#            print("Exception in arduino_read:")
+#            print(ex)
+#            pass
+#        await asyncio.sleep(0.1)
+async def arduino_task(arduino_port):
+    arduino_port
+    arduino_serial = serial.Serial(arduino_port, ARDUINO_BAUD_RATE)
+
+    while True:
+        try:
+            while arduino_serial.in_waiting > 0:
+                line = arduino_serial.readline().decode('utf-8')
+                data = eval(line.strip())
+                back_val = int(data.get("back"))
+                front_val = int(data.get("front"))
+
+                # Update DATAPACKAGE with resistance values
+                DATAPACKAGE["break_back"] = back_val
+                DATAPACKAGE["break_front"] = front_val
+                #print(f"DATAPACKAGE: {back_val}")
+                                    
+        except Exception as ex:
+            print("Exception in arduino_read:")
+            print(ex)
+            pass
+        await asyncio.sleep(0.1)
+
 #===WEBSERVER===
 #http://localhost:8057/
 #http://localhost:8057/set_resistance
@@ -229,8 +282,10 @@ async def set_resistance(request, trainer_client):
         return web.Response(text=f"Error: {str(ex)}", content_type="text/plain", status=400)
 
 async def main():
+    taskContainer = []  
     tacx_client = None
     elite_client = None
+    
     #Start
     if tacxStatus == True:
         tacx_client = await tacx_connect()
@@ -241,15 +296,27 @@ async def main():
         elite_client = await elite_connect()
         await elite_set_data_page_handler(elite_client)
     
+    if arduinoStatus == True:
+        print("Setup Ardunino")
+        arduino_port = arduino_find_port()
+        arduino_task_instance = asyncio.create_task(arduino_task(arduino_port=arduino_port))
+        taskContainer.append(arduino_task_instance)
+        print("Arduino task is running...")
+
+
     #WebServer
     app = web.Application()
+    print("Test3")
     app.router.add_get('/', serve_get_request)
     app.router.add_post('/set_resistance', lambda request: set_resistance(request, tacx_client))
+    print("Test4")
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', PORT)
+    print("Test5")
     await site.start()
     print(f"HTTP server started up on port {PORT}")
+    print("Test6")
 
     #Create a task for the keepAlliveEvent coroutine
     keepAllive = asyncio.create_task(keepAlliveEvent())
