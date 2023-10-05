@@ -114,6 +114,7 @@ async def tacx_set_resistance(resistance, client):
     if 0 <= resistance <= 200:
         try:
             trainer: TacxTrainerControl = await tacx_get_trainer(client)
+            print(f"Resistance {resistance} was set...")
             await trainer.set_basic_resistance(resistance=resistance)
             DATAPACKAGE["tacx_basic_resistance"] = resistance
             return True
@@ -196,7 +197,7 @@ async def keepAlliveEvent():
         await asyncio.sleep(0)
 
         # Check if "C" is pressed
-        user_input = await keepAllive_async_input("Press 'C' to stop the program: ")
+        user_input = await keepAllive_async_input("Press 'C' to stop the program: \n")
         if user_input.lower() == 'c':
             break
 
@@ -218,7 +219,7 @@ async def set_resistance(request, trainer_client):
         resistance = int(data.get('resistance'))
         if resistance is not None:
             resistance = int(resistance)
-            if tacx_set_resistance(resistance=resistance, client=trainer_client) == False:
+            if await tacx_set_resistance(resistance=resistance, client=trainer_client) == False:
                 return web.Response(text=f"Value could not be set! Only accepting 0-200! Or check console for other error!", status=400)
             return web.Response(text=f"Resistance set to: {resistance}", content_type="text/plain", status=200)
         else:
