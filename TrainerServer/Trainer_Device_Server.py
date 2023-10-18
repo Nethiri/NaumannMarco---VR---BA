@@ -13,11 +13,11 @@ from aiohttp import web
 
 #Trainer Devices:
 #Tax Trainer
-tacxStatus = False
+tacxStatus = True
 #Elite Stero
 eliteStatus = True
 #Break Arduino
-arduinoStatus = False
+arduinoStatus = True
 
 #Tax and Elite are connected via Bluetooth
 #their respective clear names (device names) are stored and used in global
