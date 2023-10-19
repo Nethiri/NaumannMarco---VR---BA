@@ -1,0 +1,8 @@
+aioconsole==0.6.2
+aiohttp==3.8.6
+bleak==0.21.1
+pycycling==0.3.1
+pygatt==4.0.5
+pyserial==3.5
+Requests==2.31.0
+websockets==11.0.3

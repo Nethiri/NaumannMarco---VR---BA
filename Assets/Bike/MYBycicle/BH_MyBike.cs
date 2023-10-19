@@ -2,30 +2,28 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class BH_MyBike : MonoBehaviour
 {
     public WheelCollider[] wheel_col;
     public Transform[] wheel_mesh;
     public MeshCollider[] handlebar_col;
     public Transform[] handlebar_mesh;
-    
+
     public Vector3 centerOfMass;
 
 
-    float torque = 50   ;
+    float torque = 50;
     float angle = 45;
 
     // Start is called before the first frame update
     void Start()
     {
         Rigidbody rb = GetComponent<Rigidbody>();
-        if(rb != null)
+        if (rb != null)
         {
             rb.centerOfMass = centerOfMass;
         }
-
-
-        
     }
 
     // Update is called once per frame
@@ -46,5 +44,7 @@ public class BH_MyBike : MonoBehaviour
             wheel_mesh[i].position = pos;
             wheel_mesh[i].rotation = rot;
         }
+
+       
     }
 }

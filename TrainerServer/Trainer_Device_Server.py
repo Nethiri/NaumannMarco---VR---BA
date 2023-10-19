@@ -4,6 +4,7 @@ import bleak
 import time
 from pycycling.tacx_trainer_control import TacxTrainerControl
 from pycycling.sterzo import Sterzo
+from pycycling.tacx_trainer_control import RoadSurface
 import os
 import serial
 import serial.tools.list_ports
@@ -15,9 +16,9 @@ from aiohttp import web
 #Tax Trainer
 tacxStatus = True
 #Elite Stero
-eliteStatus = True
+eliteStatus = False
 #Break Arduino
-arduinoStatus = True
+arduinoStatus = False
 
 #Tax and Elite are connected via Bluetooth
 #their respective clear names (device names) are stored and used in global
@@ -33,6 +34,8 @@ DATAPACKAGE = {
     "tacx_distance_travelled": None,
     "tacx_speed": None,
     "tacx_basic_resistance":  None,
+    "tacx_road_feel_type": None,
+    "tacx_road_feel_intesity": None,
     "elite_angle": None,
     "elite_last_update": None,
     "break_front": None,
@@ -87,7 +90,7 @@ async def tacx_connect(address=None):
         address = await find_device(TACX_DEVICE_NAME)
 
     if address is None: 
-        print("Connection to elite abborted!")
+        print("Connection to tacx abborted!")
         return False
 
     try:
@@ -128,6 +131,7 @@ async def tacx_set_resistance(resistance, client):
             trainer: TacxTrainerControl = await tacx_get_trainer(client)
             print(f"Resistance {resistance} was set...")
             await trainer.set_basic_resistance(resistance=resistance)
+            global DATAPACKAGE
             DATAPACKAGE["tacx_basic_resistance"] = resistance
             return True
         except Exception as ex:
@@ -153,6 +157,39 @@ async def tacx_disable_data_package_hanlder(client):
     if trainer is not False:
         await trainer.disable_fec_notifications()
 
+async def tacx_define_road_surface(client, roadType=RoadSurface.SIMULATION_OFF, roadIntesity=255): 
+    #check if within currently defined data range 0-50 (percent) - according to documentation, eveything above 50 might be dangerous to the device?
+    if not (0 <= roadIntesity <= 50):
+        print(f"Intensity value {roadIntesity} is outside allowed parameters!")
+        return False
+
+    #for testing purposes, lets quickly reset resistance to 0, may be changed later
+    await tacx_set_resistance(0, client) 
+    global DATAPACKAGE
+    try:
+        trainer: TacxTrainerControl = await tacx_get_trainer(client)
+        if(roadType == RoadSurface.SIMULATION_OFF):
+            await trainer.set_neo_modes( isokinetic_mode=False, isokinetic_speed=4.2,
+                road_surface_pattern=roadType,
+                road_surface_pattern_intensity=255
+            )
+ 
+            DATAPACKAGE["tacx_road_feel_type"] = roadType
+            DATAPACKAGE["tacx_road_feel_intesity"] = None
+            print(f"Road surface defined, roadType: {roadType}, intesity: {255}")
+        else: 
+            await trainer.set_neo_modes( isokinetic_mode=True, isokinetic_speed=4.2,
+                road_surface_pattern=roadType,
+                road_surface_pattern_intensity=roadIntesity
+            )
+            DATAPACKAGE["tacx_road_feel_type"] = roadType
+            DATAPACKAGE["tacx_road_feel_intesity"] = roadIntesity
+            print(f"Road surface defined, roadType: {roadType}, intesity: {roadIntesity}")
+        return True
+    except Exception as ex: 
+        print("ERROR WHILE TRYING TO SET ROAD SURFACE!")
+        print(ex)
+        return False
 #===ELITE===
 async def elite_connect(address=None): 
     #check if address is existent
@@ -210,6 +247,7 @@ async def elite_disable_data_package_handler(client):
     if sterzo is not False:
         await sterzo.disable_steering_measurement_notifications()
 
+#===General===
 async def keepAllive_async_input(prompt):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, input, prompt)
@@ -236,20 +274,6 @@ def arduino_find_port():
         print("Arduino not found! Check connection and try again!")
         return None
     
-#async def arduino_task(arduino_port):
-#    arduino_serial = serial.Serial(arduino_port, ARDUINO_BAUD_RATE)
-#    while True:
-#        try:
-#            data_string = arduino_serial.readline().decode('utf-8').strip()
-#            data = eval(data_string)
-#            global DATAPACKAGE
-#            DATAPACKAGE["break_back"] = data.get("back")
-#            DATAPACKAGE["break_front"] = data.get("front")
-#        except Exception as ex:
-#            print("Exception in arduino_read:")
-#            print(ex)
-#            pass
-#        await asyncio.sleep(0.1)
 async def arduino_task(arduino_port):
     arduino_port
     arduino_serial = serial.Serial(arduino_port, ARDUINO_BAUD_RATE)
@@ -263,6 +287,7 @@ async def arduino_task(arduino_port):
                 front_val = int(data.get("front"))
 
                 # Update DATAPACKAGE with resistance values
+                global DATAPACKAGE
                 DATAPACKAGE["break_back"] = back_val
                 DATAPACKAGE["break_front"] = front_val
                 #print(f"DATAPACKAGE: {back_val}")
@@ -276,7 +301,7 @@ async def arduino_task(arduino_port):
 #===WEBSERVER===
 #http://localhost:8057/
 #http://localhost:8057/set_resistance
-async def serve_get_request(request):
+async def serve_get_request():
     return web.Response(text=json.dumps(DATAPACKAGE), content_type="application/json", status=200)
 
 async def set_resistance(request, trainer_client):
@@ -301,7 +326,6 @@ async def set_resistance(request, trainer_client):
         return web.Response(text=f"Error: {str(ex)}", content_type="text/plain", status=400)
 
 async def main():
-    taskContainer = []  
     tacx_client = None
     elite_client = None
     
@@ -310,6 +334,7 @@ async def main():
         tacx_client = await tacx_connect()
         await tacx_set_data_page_handler(tacx_client)
         await tacx_set_resistance(client=tacx_client, resistance=10)
+        await tacx_define_road_surface(client=tacx_client, roadType=RoadSurface.OFF_ROAD, roadIntesity=50)
     
     if eliteStatus == True:
         elite_client = await elite_connect()
