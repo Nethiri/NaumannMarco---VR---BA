@@ -13,7 +13,7 @@ public class BH_MyBike : MonoBehaviour
     public Vector3 centerOfMass;
 
 
-    float torque = 50;
+    public float torque = 2000;
     float angle = 45;
 
     // Start is called before the first frame update
