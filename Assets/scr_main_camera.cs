@@ -57,7 +57,7 @@ public class scr_main_camera : MonoBehaviour
         VarjoEyeTracking.GazeData recordedGazeData = VarjoEyeTracking.GetGaze();
 
         VarjoEyeTracking.EyeMeasurements data2 = VarjoEyeTracking.GetEyeMeasurements();
-        Debug.Log(data2.leftEyeOpenness);
+        //Debug.Log(data2.leftEyeOpenness);
 
         // Create a ray from the camera's position and gaze direction
         // Ray gazeRay = new Ray(ancherObject.position, ancherObject.forward);
