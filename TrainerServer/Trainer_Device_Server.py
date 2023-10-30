@@ -159,7 +159,7 @@ async def tacx_disable_data_package_hanlder(client):
 
 async def tacx_define_road_surface(client, roadType=RoadSurface.SIMULATION_OFF, roadIntesity=255): 
     #check if within currently defined data range 0-50 (percent) - according to documentation, eveything above 50 might be dangerous to the device?
-    if not (0 <= roadIntesity <= 50):
+    if not (0 <= roadIntesity <= 100):
         print(f"Intensity value {roadIntesity} is outside allowed parameters!")
         return False
 
@@ -333,8 +333,8 @@ async def main():
     if tacxStatus == True:
         tacx_client = await tacx_connect()
         await tacx_set_data_page_handler(tacx_client)
-        await tacx_set_resistance(client=tacx_client, resistance=10)
-        await tacx_define_road_surface(client=tacx_client, roadType=RoadSurface.OFF_ROAD, roadIntesity=50)
+        #await tacx_set_resistance(client=tacx_client, resistance=10)
+        await tacx_define_road_surface(client=tacx_client, roadType=RoadSurface.CONCRETE_PLATES, roadIntesity=50)
     
     if eliteStatus == True:
         elite_client = await elite_connect()
