@@ -115,7 +115,7 @@ module generateStreetProfile(total_width, line_width, line_left_amount, line_rig
             1,          // sidewalk_left
             1/2 * meter, // bike_width
             1,          // bike_left
-            0,          // bike_right
+            01,          // bike_right
             1/4 * meter, // bike_seperator_width
             1,          // bike_seperator_left_amount
             0,          // bike_seperator_right_amount
