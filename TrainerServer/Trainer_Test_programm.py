@@ -8,36 +8,29 @@ async def make_get_request():
     async with aiohttp.ClientSession() as session:
         async with session.get('http://localhost:8057/') as response:
             if response.status == 200:
-                data = await response.json()
-                #print("Received data:")
-                print('\033c', end='')
-                print(json.dumps(data, indent=2))
-                return data
-                #print(json.dumps(data))
+                return await response.json()
             else:
                 print(f"Error: {response.status}")
                 return None
 
 async def main():
-    angleMin = 0
-    angleMax = 0
     while True:
         try:
             start = time.time()
             val = await make_get_request()
             stop = time.time()
+
             if val is not None:
-                angle = val["elite_angle"]
-                if angle < angleMin: 
-                    angleMin = angle
-                if angle > angleMax: 
-                    angleMax = angle
+                os.system('cls' if os.name == 'nt' else 'clear')  # Clear the console
+                print("Received data:")
+                print(json.dumps(val, indent=2))
+                # You can add more specific information from 'val' if needed
+                # print(f"Specific Data: {val['specific_key']}")
             
-            print(f"Duration: {stop-start}" )
-            print(f"Min: {angleMin} and Max: {angleMax}")
-            await asyncio.sleep(0.008)
-        except:
-            pass
+            print(f"Duration: {stop - start}\n")
+            await asyncio.sleep(0.08) #0.008 is possible
+        except Exception as e:
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())

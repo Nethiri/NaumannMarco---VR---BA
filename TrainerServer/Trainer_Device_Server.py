@@ -16,9 +16,9 @@ from aiohttp import web
 #Tax Trainer
 tacxStatus = True
 #Elite Stero
-eliteStatus = False
+eliteStatus = True
 #Break Arduino
-arduinoStatus = False
+arduinoStatus = True
 
 #Tax and Elite are connected via Bluetooth
 #their respective clear names (device names) are stored and used in global
@@ -293,6 +293,7 @@ async def arduino_task(arduino_port):
                 #print(f"DATAPACKAGE: {back_val}")
                                     
         except Exception as ex:
+            pass
             print("Exception in arduino_read:")
             print(ex)
             pass
@@ -301,7 +302,7 @@ async def arduino_task(arduino_port):
 #===WEBSERVER===
 #http://localhost:8057/
 #http://localhost:8057/set_resistance
-async def serve_get_request():
+async def serve_get_request(request):
     return web.Response(text=json.dumps(DATAPACKAGE), content_type="application/json", status=200)
 
 async def set_resistance(request, trainer_client):
@@ -333,8 +334,8 @@ async def main():
     if tacxStatus == True:
         tacx_client = await tacx_connect()
         await tacx_set_data_page_handler(tacx_client)
-        #await tacx_set_resistance(client=tacx_client, resistance=10)
-        await tacx_define_road_surface(client=tacx_client, roadType=RoadSurface.CONCRETE_PLATES, roadIntesity=50)
+        await tacx_set_resistance(client=tacx_client, resistance=10)
+        #await tacx_define_road_surface(client=tacx_client, roadType=RoadSurface.CONCRETE_PLATES, roadIntesity=50)
     
     if eliteStatus == True:
         elite_client = await elite_connect()
