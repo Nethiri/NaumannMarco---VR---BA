@@ -12,14 +12,14 @@ line_right_amount = 1;
 //sidewalks
 sidewalk_width = 1*meter;
 sidewalk_right = 1;
-sidewalk_left = 0;
+sidewalk_left = 1;
 //bike lane
 bike_width = 1/2 * meter;
 bike_left = 1;
 bike_right = 1;
 bike_seperator_width = 1/4*meter;
-bike_seperator_left_amount = 0;
-bike_seperator_right_amount = 0;
+bike_seperator_left_amount = 1;
+bike_seperator_right_amount = 1;
 //curb
 curb_width = 10*cm;
 curb_left = 1;

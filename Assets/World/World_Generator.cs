@@ -27,7 +27,7 @@ public class World_Generator : MonoBehaviour
     {
         foreach(GameObject part in map)
         {
-            Debug.Log();
+            //Debug.Log();
         }   
     }
 }
