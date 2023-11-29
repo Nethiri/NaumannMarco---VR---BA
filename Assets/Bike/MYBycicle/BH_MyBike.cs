@@ -42,7 +42,7 @@ public class BH_MyBike : MonoBehaviour
             wheel.steerAngle = Input.GetAxis("Horizontal") * angle;
         }
 
-        Debug.Log(rb.velocity.magnitude * 3.6);
+        //Debug.Log(rb.velocity.magnitude * 3.6);
 
         // Update the position and rotation of the wheels
         /*for (int i = 0; i < wheel_col.Length; i++)

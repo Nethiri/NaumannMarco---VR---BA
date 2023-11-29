@@ -32,7 +32,7 @@ public class scr_main_camera : MonoBehaviour
 
         
 
-        Debug.Log("GazeFilter: " + GazeFilter + " GazeFrequenzy: " + GazeFrequenzy);
+        //Debug.Log("GazeFilter: " + GazeFilter + " GazeFrequenzy: " + GazeFrequenzy);
     }
 
     // Update is called once per frame
@@ -56,7 +56,7 @@ public class scr_main_camera : MonoBehaviour
         // Get gaze data
         VarjoEyeTracking.GazeData recordedGazeData = VarjoEyeTracking.GetGaze();
 
-        Debug.Log(recordedGazeData.left.forward);
+        //Debug.Log(recordedGazeData.left.forward);
 
         VarjoEyeTracking.EyeMeasurements data2 = VarjoEyeTracking.GetEyeMeasurements();
         //Debug.Log(data2.leftEyeOpenness);
