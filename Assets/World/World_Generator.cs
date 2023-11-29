@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,41 +32,102 @@ public class World_Generator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //streight piece part programm!!!! - move / todo
-        Debug.Log(map.Count);
-        foreach (GameObject streetPiece in map)
+        Map_FindCollision();
+    }
+
+    void Map_FindCollision()
+    {
+        foreach(GameObject street in map)
         {
-            List<Collider> collection = new ( streetPiece.GetComponentsInChildren<Collider>() );
-            Debug.Log("Number of colliders:" + collection.Count);
-            foreach(Collider col in collection)
+            foreach(Collider col in street.GetComponentsInChildren<Collider>())
             {
-                foreach (Collider playerCollider in player_entity.GetComponentsInChildren<Collider>())
+                if(col.bounds.Intersects(player_entity.GetComponentInChildren<Collider>().bounds))
                 {
-                    if (col.bounds.Intersects(playerCollider.bounds))
+                    //if part of street_streight
+                    if(street.CompareTag("streetStreight"))
                     {
-                        Debug.Log("Collision detected in: " + col.name);
-                        // Do something when a collision is detected
-                        if(col.name == "Sensor_Z_Pos")
-                        {
-                            Debug.Log("Do something cool!");
-                            GameObject anchorObject = streetPiece.transform.Find("Anchor_Z_Pos").gameObject;
-                            //Add new object to anchor
-                            Debug.Log(anchorObject.transform.position);
-                            Map_addPartToAnchor(street_streight, anchorObject.transform.position, new Vector3(x:0,y:anchorObject.transform.rotation.y,z:0), 0);
-                        }
+                        //todo streight street function
+                        if (Handle_streetStreight(street, col)) { return; };
+                    }
+                    else if(street.CompareTag("streetCurve"))
+                    {
+                        //todo curve street function
+                    }
+                    else if (street.CompareTag("streetTSection"))
+                    {
+                        //todo TSection street function
+                    }
+                    else if (street.CompareTag("street4Way"))
+                    {
+                        //todo 4Way street function
+                    }
+                    else
+                    {
+                        Debug.Log("Collision was detected in unknown tag!");
                     }
                 }
             }
+        } 
+    }
 
+    void Map_addPartToAnchor(GameObject street_Part, Vector3 anchorOrigin, float partOffset, Quaternion partOrientation) 
+    {
+        //Function to spawn a new part of the map on a certain anchor
+
+        Vector3 spawnPoint = anchorOrigin + (partOrientation * Vector3.forward * partOffset);
+        foreach(GameObject street in map) 
+        { 
+            if (street.transform.position == spawnPoint) 
+            {
+                //no new object needs to be spawned
+                return;
+            } 
+        }
+        GameObject newStreet = Instantiate(street_Part, spawnPoint, partOrientation);
+        map.Add(newStreet);
+    }
+
+    bool Handle_streetStreight(GameObject street, Collider col) 
+    {
+        if(col.name == "Sensor_Z_Pos")
+        {
+            GameObject anchorObject = street.transform.Find("Anchor_Z_Pos").gameObject;
+            Map_addPartToAnchor(street_streight, anchorObject.transform.position, Offset_small, anchorObject.transform.rotation);
+            return true;
+        }
+        else if(col.name == "Sensor_Z_Neg")
+        {
+            GameObject anchorObject = street.transform.Find("Anchor_Z_Neg").gameObject;
+            Map_addPartToAnchor(street_streight, anchorObject.transform.position, -Offset_small, anchorObject.transform.rotation);
+            return true;
+        }
+        else
+        {
+            Debug.Log("Colum: " + col.name + " sensoren not found");
+            return false;
         }
     }
 
-    void Map_addPartToAnchor(GameObject street_Part, Vector3 anchorOrigin, Vector3 partDirection, int partOrientation) 
+    bool Handle_streetCurve(GameObject street, Collider col)
     {
-        //Function to spawn a new part of the map on a certain anchor
-        Vector3 spawnPoint = anchorOrigin + Vector3.Cross(partDirection, new Vector3(Offset_small, Offset_small, Offset_small)); 
-        Quaternion spawnOrientation = new (x: 0, y: partOrientation, z: 0, w: 0);
-        GameObject newStreet = Instantiate(street_Part, spawnPoint, spawnOrientation);
-        map.Add(newStreet);
+        if (col.name == "Sensor_Z_Pos")
+        {
+            GameObject anchorObject = street.transform.Find("Anchor_Z_Pos").gameObject;
+            Map_addPartToAnchor(street_streight, anchorObject.transform.position, Offset_small, anchorObject.transform.rotation);
+            return true;
+        }
+        else if (col.name == "Sensor_X_Neg")
+        {
+            GameObject anchorObject = street.transform.Find("Anchor_X_Neg").gameObject;
+            Map_addPartToAnchor(street_streight, anchorObject.transform.position, -Offset_small, anchorObject.transform.rotation);
+            return true;
+        }
+        else
+        {
+            Debug.Log("Colum: " + col.name + " sensoren not found");
+            return false;
+        }
     }
+
+
 }
