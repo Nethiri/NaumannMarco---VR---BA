@@ -64,9 +64,8 @@ public class World_Generator : MonoBehaviour
     {
         //Function to spawn a new part of the map on a certain anchor
         Vector3 spawnPoint = anchorOrigin + Vector3.Cross(partDirection, new Vector3(Offset_small, Offset_small, Offset_small)); 
-        Quaternion spawnOrientation = new Quaternion(x: 0, y: partOrientation, z: 0, w: 0);
+        Quaternion spawnOrientation = new (x: 0, y: partOrientation, z: 0, w: 0);
         GameObject newStreet = Instantiate(street_Part, spawnPoint, spawnOrientation);
         map.Add(newStreet);
-
     }
 }
