@@ -1985,6 +1985,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Plane
       objectReference: {fileID: 0}
+    - target: {fileID: 5101174539963248111, guid: 288a626bfd5f93349a80f7e7aa71ed25, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 288a626bfd5f93349a80f7e7aa71ed25, type: 3}
 --- !u!1001 &9050152082427204440
