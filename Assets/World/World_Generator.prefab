@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9050152082559243597}
-  - component: {fileID: 9050152082559243596}
+  - component: {fileID: 9050152082427204442}
   m_Layer: 0
   m_Name: World_Generator
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9050152082559243596
+--- !u!114 &9050152082427204442
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,11 +41,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 9050152082559243595}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c9f590de9f241c4d9b5f3620aaf3472, type: 3}
+  m_Script: {fileID: 11500000, guid: a771acb31b9a9dd449f0983632036068, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   player_entity: {fileID: 0}
-  street_streight: {fileID: 4407876366260940591, guid: 2ce262afa5312394ea1d25912e7bd628, type: 3}
+  street_straight: {fileID: 0}
   street_curve: {fileID: 0}
   street_tSection: {fileID: 0}
   street_4Way: {fileID: 0}
+  map: []

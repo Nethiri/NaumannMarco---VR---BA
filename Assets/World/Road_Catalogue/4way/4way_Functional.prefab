@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 2267255522433947794}
   - component: {fileID: 4076355434031033432}
   m_Layer: 0
-  m_Name: 4way
-  m_TagString: Untagged
+  m_Name: 4way_Functional
+  m_TagString: street4Way
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 public class World_Generator : MonoBehaviour
 {
@@ -21,7 +18,7 @@ public class World_Generator : MonoBehaviour
 
     //type, rotation, locationX, locationY
 
-    public class MapChunk : World_Generator
+    public class MapChunk
     {
         //map informations
         public StreetTile[,] ChunkMapArray;
@@ -46,23 +43,53 @@ public class World_Generator : MonoBehaviour
 
         public void Force_AddTile(GameObject type, int rotation, int posX, int posY) //place a new spawned pre-defined tile into the chunk 
         {
+            
             GameObject NewTile = Instantiate(type);
+            NewTile.name = NewTile.name + "X:" + posX + "Y:" + posY;
             Vector3 spawnPoint = new(this.Position.x + 25f * posX, 0, this.Position.y + 25f * posY);
             StreetTile newStreet = new(NewTile, spawnPoint, rotation);
             this.ChunkMapArray[posX, posY] = newStreet;
         }
 
-        public void GenerateChunkMap()
+        public bool RemoveTile(int x, int y)
+        {
+            if (ChunkMapArray[x, y].DestroyObject() == true)
+            {
+                ChunkMapArray[x, y] = null;
+                return true;
+            }
+            return false;
+        }
+
+        public void GenerateChunkMap(World_Generator instance)
         {
             //todo - fill the chunk with valid map connections
-            for (int x = 0; x < _ChunkSize; x++)
-            {
-                for (int y = 0; y < _ChunkSize; y++)
-                {
-                    this.Force_AddTile(street_straight, 0, x, y);
-                }
-            }
+            //for (int x = 0; x < _ChunkSize; x++)
+            //{
+            //    for (int y = 0; y < _ChunkSize; y++)
+            //    {
+            //        this.Force_AddTile(instance.street_straight, 1, x, y);
+            //        if (x != 0 && y != 0)
+            //        {
+            //            Debug.Log("Tile: x:" + x + " y:" + y + "and Tile: x:" + x + " y:" + (y-1));
+            //            if (ChunkMapArray[x, y].DoesTileFit(ChunkMapArray[x, y - 1]))
+            //            {
+            //                Debug.Log("Tile fits!");
+            //            }
+            //            else
+            //            {
+            //                Debug.Log("Tile doesnt fit!");
+            //            }
+            //        }
+            //    }
+            //}
+
+
         }
+
+
+
+
 
     }
 
@@ -81,7 +108,6 @@ public class World_Generator : MonoBehaviour
         {
             this.Position = SpawnPoint;
             this.Rotation = Rotation;
-
             if (StreetObject.CompareTag("streetStreight"))
             {
                 if (Rotation == 0 || Rotation == 2)
@@ -89,8 +115,8 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
+                    
                     //todo rotation and positions
                 }
                 if (Rotation == 1 || Rotation == 3)
@@ -98,8 +124,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and positions
                 }
             }
@@ -110,8 +135,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Bottom = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 1) //right to top
@@ -119,8 +143,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Right = true;
                     this.Connection_Top = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 2) //top to left
@@ -128,8 +151,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Left = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 3) //left to bottom
@@ -137,8 +159,8 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
+
                     //todo rotation and position
                 }
             }
@@ -150,8 +172,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Right = true;
                     this.Connection_Left = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 1) // right to top and bottom
@@ -160,8 +181,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 2) // top to right and left
@@ -170,8 +190,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 3) //left to bottom and top
@@ -180,8 +199,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Bottom = true;
                     this.Connection_Top = true;
                     this.GrafikObject = StreetObject;
-                    this.GrafikObject.transform.position = this.Position;
-                    this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
             }
@@ -192,8 +210,7 @@ public class World_Generator : MonoBehaviour
                 this.Connection_Bottom = true;
                 this.Connection_Top = true;
                 this.GrafikObject = StreetObject;
-                this.GrafikObject.transform.position = this.Position;
-                this.GrafikObject.transform.rotation = new(0, Rotation * 90, 0, 0);
+                GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                 //todo rotation and position
             }
             else
@@ -246,6 +263,19 @@ public class World_Generator : MonoBehaviour
             return false;
         }
 
+        public bool DestroyObject()
+        {
+            GrafikObject.SetActive(false);
+            Destroy(GrafikObject);
+            if(GrafikObject.IsDestroyed())
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
 
@@ -254,16 +284,16 @@ public class World_Generator : MonoBehaviour
     void Start()
     {
         map = new List<MapChunk>();
-        MapChunk myTest = new MapChunk(0, 0, 0);
+        MapChunk myTest = new(0, 0, 0);
         map.Add(myTest);
-        map[0].GenerateChunkMap();
+        map[0].GenerateChunkMap(this);
 
     }
 
     // Update is called once per frame
     void Update()
     {
-
+  
     }
 
 
