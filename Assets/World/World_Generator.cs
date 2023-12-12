@@ -45,7 +45,7 @@ public class World_Generator : MonoBehaviour
         {
             
             GameObject NewTile = Instantiate(type);
-            NewTile.name = NewTile.name + "X:" + posX + "Y:" + posY;
+            NewTile.name = "Street at " + "X:" + posX + "Y:" + posY;
             Vector3 spawnPoint = new(this.Position.x + 25f * posX, 0, this.Position.y + 25f * posY);
             StreetTile newStreet = new(NewTile, spawnPoint, rotation);
             this.ChunkMapArray[posX, posY] = newStreet;
@@ -83,10 +83,48 @@ public class World_Generator : MonoBehaviour
             //        }
             //    }
             //}
+            System.Random random = new System.Random(); // Random number generator
 
+            for (int x = 0; x < _ChunkSize; x++)
+            {
+                for (int y = 0; y < _ChunkSize; y++)
+                {
+                    // Check if there is already a street tile in this position
+                    if (ChunkMapArray[x, y] == null)
+                    {
+                        // Generate a random street type
+                        GameObject streetType = GetRandomStreetType(instance);
+
+                        // Generate a random rotation (0 to 3)
+                        int rotation = random.Next(4);
+
+                        // Add the street tile to the map
+                        Force_AddTile(streetType, rotation, x, y);
+                    }
+                }
+            }
 
         }
 
+        private GameObject GetRandomStreetType(World_Generator instance)
+        {
+            System.Random random = new System.Random();
+            int randomIndex = random.Next(4); // 0 to 3
+
+            switch (randomIndex)
+            {
+                case 0:
+                    return instance.street_straight;
+                case 1:
+                    return instance.street_curve;
+                case 2:
+                    return instance.street_tSection;
+                case 3:
+                    return instance.street_4Way;
+                default:
+                    return instance.street_4Way; // Default to straight street if something goes wrong
+            }
+        }
 
 
 
@@ -115,6 +153,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
+                    GrafikObject.name = GrafikObject.name + " - Streight down<>up";
                     GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     
                     //todo rotation and positions
@@ -124,6 +163,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
+                    GrafikObject.name = GrafikObject.name + " - Streight left<>right";
                     GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and positions
                 }
@@ -135,7 +175,8 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Bottom = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
+                    GrafikObject.name = GrafikObject.name + " - Curve bottom->right";
+                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f,this.Position.y,this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 1) //right to top
@@ -143,7 +184,8 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Right = true;
                     this.Connection_Top = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
+                    GrafikObject.name = GrafikObject.name + " - Curve right->top";
+                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 2) //top to left
@@ -151,7 +193,8 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Left = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
+                    GrafikObject.name = GrafikObject.name + " - Curve top->left";
+                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
                 if (Rotation == 3) //left to bottom
@@ -159,7 +202,8 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
+                    GrafikObject.name = GrafikObject.name + " - Curve left->bottom";
+                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
 
                     //todo rotation and position
                 }
@@ -286,6 +330,7 @@ public class World_Generator : MonoBehaviour
         map = new List<MapChunk>();
         MapChunk myTest = new(0, 0, 0);
         map.Add(myTest);
+        map[0].Force_AddTile(street_straight, 0, 0, 0);
         map[0].GenerateChunkMap(this);
 
     }
