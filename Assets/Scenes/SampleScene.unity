@@ -206,12 +206,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d1af3df35b29b54d864f31e4625c42a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rayRender_Left: {fileID: 1659283662}
-  rayRender_Right: {fileID: 1442804906}
-  ancherObject_left: {fileID: 1926332554}
-  ancherObject_right: {fileID: 1086834793}
-  Offset: {x: 0, y: 0, z: 0}
-  isHidden: 1
 --- !u!146 &364678180 stripped
 WheelCollider:
   m_CorrespondingSourceObject: {fileID: 2830724464952819121, guid: 1a62d9426e567584eb041569dbdfd6e9, type: 3}
@@ -1751,7 +1745,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9216731011762517535, guid: d2ec5c4fdbc2ebd40b9923a1a5989118, type: 3}
       propertyPath: m_Drag
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9216731011762517535, guid: d2ec5c4fdbc2ebd40b9923a1a5989118, type: 3}
       propertyPath: m_Mass
@@ -2006,6 +2000,10 @@ PrefabInstance:
       propertyPath: street_curve
       value: 
       objectReference: {fileID: 3824028298556677752, guid: d11464832ab7a2b46888471bb56bd006, type: 3}
+    - target: {fileID: 9050152082427204442, guid: 5b71a599a6389584f88750345a22591f, type: 3}
+      propertyPath: street_empty
+      value: 
+      objectReference: {fileID: 4181297853735963888, guid: dc3017852fdb85b4b9a69e36d94ad00b, type: 3}
     - target: {fileID: 9050152082427204442, guid: 5b71a599a6389584f88750345a22591f, type: 3}
       propertyPath: player_entity
       value: 

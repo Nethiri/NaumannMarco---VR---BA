@@ -8,6 +8,7 @@ TagManager:
   - streetCurve
   - streetTSection
   - street4Way
+  - streetEmpty
   layers:
   - Default
   - TransparentFX

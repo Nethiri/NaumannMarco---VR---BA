@@ -12,9 +12,10 @@ public class World_Generator : MonoBehaviour
     public GameObject street_curve;
     public GameObject street_tSection;
     public GameObject street_4Way;
+    public GameObject street_empty;
 
     public List<MapChunk> map;
-    const int _ChunkSize = 16;
+    const int _ChunkSize = 3;
 
     //type, rotation, locationX, locationY
 
@@ -25,30 +26,46 @@ public class World_Generator : MonoBehaviour
         public Vector3 Position;
         //connection point informations
         public List<int> ConnectionPoints_Left;
+        bool external_left = false;
         public List<int> ConnectionPoints_Right;
+        bool external_right = false;
         public List<int> ConnectionPoints_Top;
+        bool external_top = false;
         public List<int> ConnectionPoints_Bottom;
+        bool external_bottom = false;
 
         public MapChunk(int X, int Y, int Z) //initializer for Class - needs to take in already existing map connections
         {
             this.ChunkMapArray = new StreetTile[_ChunkSize, _ChunkSize];
             //location of the chunks bottom left corner
-            this.Position = new Vector3(X, Y, Z);
-            //initialize connectionpoint lists
-            ConnectionPoints_Left = new List<int>();
-            ConnectionPoints_Right = new List<int>();
-            ConnectionPoints_Top = new List<int>();
-            ConnectionPoints_Bottom = new List<int>();
+            this.Position = new Vector3(X, Y, Z);            
         }
 
         public void Force_AddTile(GameObject type, int rotation, int posX, int posY) //place a new spawned pre-defined tile into the chunk 
         {
-            
             GameObject NewTile = Instantiate(type);
             NewTile.name = "Street at " + "X:" + posX + "Y:" + posY;
             Vector3 spawnPoint = new(this.Position.x + 25f * posX, 0, this.Position.y + 25f * posY);
-            StreetTile newStreet = new(NewTile, spawnPoint, rotation);
+            StreetTile newStreet = new(NewTile, spawnPoint, rotation, posX, posY);
             this.ChunkMapArray[posX, posY] = newStreet;
+        }
+
+        public void SetConnectionPoints(int side, List<int> ConnectionLocations)
+        {
+            //side 0 = bottom
+            //side 1 = right
+            //side 2 = top
+            //side 3 = left
+            if (side == 0) { this.ConnectionPoints_Bottom = ConnectionLocations; this.external_bottom = true; }
+            if (side == 1) { this.ConnectionPoints_Right = ConnectionLocations; this.external_right = true; }
+            if (side == 2) { this.ConnectionPoints_Top = ConnectionLocations; this.external_top = true; }
+            if (side == 3) { this.ConnectionPoints_Left = ConnectionLocations; this.external_left = true; }
+        }
+
+        public List<int> GetConnectionPoints(int side)
+        {
+            //todo
+            return new List<int>();
         }
 
         public bool RemoveTile(int x, int y)
@@ -61,48 +78,48 @@ public class World_Generator : MonoBehaviour
             return false;
         }
 
-        public void GenerateChunkMap(World_Generator instance)
+        public void GenerateChunkMap(World_Generator instance, GameObject ChunkType = null)
         {
-            //todo - fill the chunk with valid map connections
-            //for (int x = 0; x < _ChunkSize; x++)
-            //{
-            //    for (int y = 0; y < _ChunkSize; y++)
-            //    {
-            //        this.Force_AddTile(instance.street_straight, 1, x, y);
-            //        if (x != 0 && y != 0)
-            //        {
-            //            Debug.Log("Tile: x:" + x + " y:" + y + "and Tile: x:" + x + " y:" + (y-1));
-            //            if (ChunkMapArray[x, y].DoesTileFit(ChunkMapArray[x, y - 1]))
-            //            {
-            //                Debug.Log("Tile fits!");
-            //            }
-            //            else
-            //            {
-            //                Debug.Log("Tile doesnt fit!");
-            //            }
-            //        }
-            //    }
-            //}
             System.Random random = new System.Random(); // Random number generator
+            bool forceLeftRight = false;
+            bool forceTopBottom = false;
 
-            for (int x = 0; x < _ChunkSize; x++)
+            //decide with type of chunk it is unless specified otherwise
+            if (ChunkType == null)
             {
-                for (int y = 0; y < _ChunkSize; y++)
-                {
-                    // Check if there is already a street tile in this position
-                    if (ChunkMapArray[x, y] == null)
-                    {
-                        // Generate a random street type
-                        GameObject streetType = GetRandomStreetType(instance);
-
-                        // Generate a random rotation (0 to 3)
-                        int rotation = random.Next(4);
-
-                        // Add the street tile to the map
-                        Force_AddTile(streetType, rotation, x, y);
-                    }
-                }
+                ChunkType = GetRandomStreetType(instance);
             }
+            //place the definition piece randomly into the chunk, if there is a pre-defined piece, try placing it again!
+            int typeX, typeY;
+            do
+            {
+                typeX = random.Next(_ChunkSize);
+                typeY = random.Next(_ChunkSize);
+            } while (this.ChunkMapArray[typeX, typeY] != null);
+            //check if piece is placed at the outer side of the chunk (and if, is there a connection point that must be fulfilled)
+            if ((typeX == 0 && external_left && ConnectionPoints_Left.Contains(typeY)) ||
+                (typeX == _ChunkSize - 1 && external_right && ConnectionPoints_Right.Contains(typeY)))
+            {
+                forceLeftRight = true;
+            }
+            if ((typeY == 0 && external_bottom && ConnectionPoints_Bottom.Contains(typeX)) ||
+                (typeY == _ChunkSize - 1 && external_top && ConnectionPoints_Top.Contains(typeX)))
+            {
+                forceTopBottom = true;
+            }
+            //try and place road piece so that connection conditions (if needed) are meet
+
+
+            //place tile in map, with random rotation
+            //check if needed connections are there
+            //if not, try again
+            //if not possible change chunk type
+
+
+
+
+
+
 
         }
 
@@ -126,9 +143,22 @@ public class World_Generator : MonoBehaviour
             }
         }
 
-
-
-
+        private bool CheckMapFilled()
+        {
+            bool full = true;
+            for (int x = 0; x < _ChunkSize; x++)
+            {
+                for (int y = 0; y < _ChunkSize; y++)
+                {
+                    if (this.ChunkMapArray[x, y] != null)
+                    {
+                        full = false;
+                        break;
+                    }
+                }
+            }
+            return full;
+        }
     }
 
     public class StreetTile
@@ -141,11 +171,28 @@ public class World_Generator : MonoBehaviour
         public bool Connection_Bottom = false;
         public bool Connection_Left = false;
         public bool Connection_Right = false;
+        //own location in map array
+        public int self_x;
+        public int self_y;
+        //prevois tile
+        public int previous_x;
+        public int previous_y;
 
-        public StreetTile(GameObject StreetObject, Vector3 SpawnPoint, int Rotation)
+
+
+        public StreetTile(GameObject StreetObject, Vector3 SpawnPoint, int Rotation, int curX, int curY, int prevX = -1, int prevY = -1)
         {
             this.Position = SpawnPoint;
             this.Rotation = Rotation;
+            this.self_x = curX;
+            this.self_y = curY;
+
+            if(prevX != -1 && prevY != -1)
+            {
+                this.previous_x = prevX;
+                this.previous_y = prevY;
+            }
+
             if (StreetObject.CompareTag("streetStreight"))
             {
                 if (Rotation == 0 || Rotation == 2)
@@ -266,7 +313,44 @@ public class World_Generator : MonoBehaviour
             }
         }
 
-        public bool DoesTileFit(StreetTile CompareTile)
+        public bool DoesTileConnect(StreetTile CompareTile = null, int side = -1) //checks if the two tiles in question connect to one another or if an external connection exists
+        {
+            if(CompareTile != null)
+            {
+                if (this.self_x < CompareTile.self_x && this.self_y == CompareTile.self_y) 
+                {
+                    if (this.Connection_Right == true && CompareTile.Connection_Left == true) { return true; } 
+                }
+                if (this.self_x > CompareTile.self_x && this.self_y == CompareTile.self_y)
+                {
+                    if (this.Connection_Left == true && CompareTile.Connection_Right == true) { return true; }
+                }
+                if (this.self_y < CompareTile.self_y && this.self_x == CompareTile.self_x)
+                {
+                    if (this.Connection_Top == true && CompareTile.Connection_Bottom == true) { return true; }
+                }
+                if (this.self_y > CompareTile.self_y && this.self_x == CompareTile.self_x)
+                {
+                    if (this.Connection_Bottom == true && CompareTile.Connection_Top == true) { return true; }
+                }
+                return false;
+            }
+            else if(side != -1)
+            {
+                //side 0 = bottom
+                //side 1 = right
+                //side 2 = top
+                //side 3 = left
+                if (this.Connection_Bottom == true && side == 0) { return true; }
+                if (this.Connection_Right == true && side == 1) { return true; }
+                if (this.Connection_Top == true && side == 2) { return true; }
+                if (this.Connection_Left == true && side == 3) { return true; }
+                return false;
+            }
+            else { return false; }
+        }
+
+        public bool DoesTileFit(StreetTile CompareTile) //checks if both tiles are next to one another without having a connection expectation from either
         {
             Vector3 myTile = this.GrafikObject.transform.position;
             Vector3 myComp = CompareTile.GrafikObject.transform.position;
@@ -274,7 +358,7 @@ public class World_Generator : MonoBehaviour
             if (myTile.x < myComp.x || myTile.z == myComp.z)
             {
                 //tile is to the right
-                if (CompareTile.Connection_Right == true && this.Connection_Left == true)
+                if (CompareTile.Connection_Right == false && this.Connection_Left == false)
                 {
                     //tile fits
                     return true;
@@ -283,7 +367,7 @@ public class World_Generator : MonoBehaviour
             if (myTile.x > myComp.x || myTile.z == myComp.z)
             {
                 //tile is to the left
-                if (CompareTile.Connection_Left == true && this.Connection_Right == true)
+                if (CompareTile.Connection_Left == false && this.Connection_Right == false)
                 {
                     //tile fits
                     return true;
@@ -292,7 +376,7 @@ public class World_Generator : MonoBehaviour
             if (myTile.z < myComp.z || myTile.x == myComp.x)
             {
                 //tile is to the top
-                if (CompareTile.Connection_Top == true && this.Connection_Bottom == true)
+                if (CompareTile.Connection_Top == false && this.Connection_Bottom == false)
                 {
                     //tile fits
                     return true;
@@ -301,7 +385,7 @@ public class World_Generator : MonoBehaviour
             if (myTile.z > myComp.z || myTile.x == myComp.x)
             {
                 //tile is to the bottom
-                if (CompareTile.Connection_Bottom == true && this.Connection_Top == true)
+                if (CompareTile.Connection_Bottom == false && this.Connection_Top == false)
                 {
                     //tile fits
                     return true;

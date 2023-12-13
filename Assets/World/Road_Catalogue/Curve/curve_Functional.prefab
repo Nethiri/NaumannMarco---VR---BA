@@ -185,6 +185,7 @@ GameObject:
   - component: {fileID: 4493041938482808002}
   - component: {fileID: 717662525654322023}
   - component: {fileID: 3319523504481419181}
+  - component: {fileID: 1319849000295083084}
   m_Layer: 0
   m_Name: curve_Functional
   m_TagString: streetCurve
@@ -265,6 +266,20 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &1319849000295083084
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3824028298556677752}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -2833436897467546680, guid: 9501479dad9fbf54bbfa187e97c55ae8, type: 3}
 --- !u!1 &4380417311440267326
 GameObject:
   m_ObjectHideFlags: 0

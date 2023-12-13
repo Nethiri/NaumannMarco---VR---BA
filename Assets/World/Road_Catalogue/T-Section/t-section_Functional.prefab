@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4022254214998690612}
   - component: {fileID: 35520206711260305}
   - component: {fileID: 2853811264110424155}
+  - component: {fileID: 7947797418622126109}
   m_Layer: 0
   m_Name: t-section_Functional
   m_TagString: streetTSection
@@ -87,6 +88,20 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &7947797418622126109
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4366866875169165710}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 6794503508569556405, guid: 40ec60a21ddf88e4c9714453748dca7f, type: 3}
 --- !u!1 &9000159385866499418
 GameObject:
   m_ObjectHideFlags: 0
