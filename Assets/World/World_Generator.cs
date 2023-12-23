@@ -80,7 +80,7 @@ public class World_Generator : MonoBehaviour
 
         public void GenerateChunkMap(World_Generator instance, GameObject ChunkType = null)
         {
-            System.Random random = new System.Random(); // Random number generator
+            System.Random random = new(); // Random number generator
             bool forceLeftRight = false;
             bool forceTopBottom = false;
 
@@ -125,7 +125,7 @@ public class World_Generator : MonoBehaviour
 
         private GameObject GetRandomStreetType(World_Generator instance)
         {
-            System.Random random = new System.Random();
+            System.Random random = new();
             int randomIndex = random.Next(4); // 0 to 3
 
             switch (randomIndex)
@@ -200,7 +200,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - Streight down<>up";
+                    GrafikObject.name += " - Streight down<>up";
                     GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     
                     //todo rotation and positions
@@ -210,7 +210,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - Streight left<>right";
+                    GrafikObject.name += " - Streight left<>right";
                     GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and positions
                 }
@@ -222,7 +222,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Bottom = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - Curve bottom->right";
+                    GrafikObject.name += " - Curve bottom->right";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -231,7 +231,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - Curve left->bottom";
+                    GrafikObject.name += " - Curve left->bottom";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -240,7 +240,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Left = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - Curve top->left";
+                    GrafikObject.name += " - Curve top->left";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -249,7 +249,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Right = true;
                     this.Connection_Top = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - Curve right->top";
+                    GrafikObject.name += " - Curve right->top";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -262,7 +262,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Top = true;
                     this.Connection_Bottom = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - TSection right->top<>bottom";
+                    GrafikObject.name += " - TSection right->top<>bottom";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -272,7 +272,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Right = true;
                     this.Connection_Left = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - TSection bottom->left<>right";
+                    GrafikObject.name += " - TSection bottom->left<>right";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x+12.5f, this.Position.y, this.Position.z-12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -282,7 +282,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Bottom = true;
                     this.Connection_Top = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - TSection left->bottom<>top";
+                    GrafikObject.name += " - TSection left->bottom<>top";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -292,7 +292,7 @@ public class World_Generator : MonoBehaviour
                     this.Connection_Left = true;
                     this.Connection_Right = true;
                     this.GrafikObject = StreetObject;
-                    GrafikObject.name = GrafikObject.name + " - TSection top->right<>left";
+                    GrafikObject.name += " - TSection top->right<>left";
                     GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
                     //todo rotation and position
                 }
@@ -304,6 +304,7 @@ public class World_Generator : MonoBehaviour
                 this.Connection_Bottom = true;
                 this.Connection_Top = true;
                 this.GrafikObject = StreetObject;
+                GrafikObject.name += " - 4WayStreet";
                 GrafikObject.transform.SetPositionAndRotation(new(this.Position.x+12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, 0, 0));
                 //todo rotation and position
             }
