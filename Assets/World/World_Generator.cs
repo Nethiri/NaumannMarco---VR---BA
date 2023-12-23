@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class World_Generator : MonoBehaviour
 {
@@ -50,6 +51,8 @@ public class World_Generator : MonoBehaviour
             this.ChunkMapArray[posX, posY] = newStreet;
         }
 
+        
+
         public void SetConnectionPoints(int side, List<int> ConnectionLocations)
         {
             //side 0 = bottom
@@ -72,6 +75,7 @@ public class World_Generator : MonoBehaviour
         {
             if (ChunkMapArray[x, y].DestroyObject() == true)
             {
+                Debug.Log("Tile: X-" + x + " Y-" + y + " has been removed!");
                 ChunkMapArray[x, y] = null;
                 return true;
             }
@@ -80,47 +84,7 @@ public class World_Generator : MonoBehaviour
 
         public void GenerateChunkMap(World_Generator instance, GameObject ChunkType = null)
         {
-            System.Random random = new(); // Random number generator
-            bool forceLeftRight = false;
-            bool forceTopBottom = false;
-
-            //decide with type of chunk it is unless specified otherwise
-            if (ChunkType == null)
-            {
-                ChunkType = GetRandomStreetType(instance);
-            }
-            //place the definition piece randomly into the chunk, if there is a pre-defined piece, try placing it again!
-            int typeX, typeY;
-            do
-            {
-                typeX = random.Next(_ChunkSize);
-                typeY = random.Next(_ChunkSize);
-            } while (this.ChunkMapArray[typeX, typeY] != null);
-            //check if piece is placed at the outer side of the chunk (and if, is there a connection point that must be fulfilled)
-            if ((typeX == 0 && external_left && ConnectionPoints_Left.Contains(typeY)) ||
-                (typeX == _ChunkSize - 1 && external_right && ConnectionPoints_Right.Contains(typeY)))
-            {
-                forceLeftRight = true;
-            }
-            if ((typeY == 0 && external_bottom && ConnectionPoints_Bottom.Contains(typeX)) ||
-                (typeY == _ChunkSize - 1 && external_top && ConnectionPoints_Top.Contains(typeX)))
-            {
-                forceTopBottom = true;
-            }
-            //try and place road piece so that connection conditions (if needed) are meet
-
-
-            //place tile in map, with random rotation
-            //check if needed connections are there
-            //if not, try again
-            //if not possible change chunk type
-
-
-
-
-
-
-
+            Debug.Log(this.ChunkMapArray.GetLength(0));
         }
 
         private GameObject GetRandomStreetType(World_Generator instance)
@@ -158,6 +122,27 @@ public class World_Generator : MonoBehaviour
                 }
             }
             return full;
+        }
+
+        private List<int> GetTileConnections(int posX, int posY)
+        {
+            //0 - bottom || 4 - bottom optional 
+            //1 - right  || 5 - right optional
+            //2 - top    || 6 - top optional
+            //3 - left   || 7 - left optional
+            List<int> connectionList = new();
+
+            if(posX + 1 == this.ChunkMapArray.GetLength(0)) { connectionList.Add(5); }
+            if(posX - 1 < 0) { connectionList.Add(7); }
+            if(posY + 1 == this.ChunkMapArray.GetLength(1)) { connectionList.Add(6); }
+            if(posY - 1 < 0) { connectionList.Add(4); }
+
+            if (this.ChunkMapArray[posX, posY + 1].Connection_Bottom) { connectionList.Add(2); }
+            if (this.ChunkMapArray[posX, posY - 1].Connection_Top) { connectionList.Add(0); }
+            if (this.ChunkMapArray[posX + 1, posY].Connection_Top) { connectionList.Add(3); }
+            if (this.ChunkMapArray[posX - 1, posY].Connection_Top) { connectionList.Add(1); }
+
+            return connectionList;
         }
     }
 
@@ -417,22 +402,23 @@ public class World_Generator : MonoBehaviour
     {
         map = new List<MapChunk>();
         MapChunk myTest = new(0, 0, 0);
-        MapChunk myTest2 = new(410, 0, 0);
-        MapChunk myTest3 = new(-410, 0, 0);
-        MapChunk myTest4 = new(0, 410, 0);
-        MapChunk myTest5 = new(0, -410, 0);
+        //MapChunk myTest2 = new(110, 0, 0);
+        //MapChunk myTest3 = new(-110, 0, 0);
+        //MapChunk myTest4 = new(0, 110, 0);
+        //MapChunk myTest5 = new(0, -110, 0);
 
         map.Add(myTest);
-        map.Add(myTest2);
-        map.Add(myTest3);
-        map.Add(myTest4);
-        map.Add(myTest5);
-        map[0].Force_AddTile(street_straight, 0, 0, 0);
+        //map.Add(myTest2);
+        //map.Add(myTest3);
+        //map.Add(myTest4);
+        //map.Add(myTest5);
+        //map[0].Force_AddTile(street_straight, 0, 0, 0);
         map[0].GenerateChunkMap(this);
-        map[1].GenerateChunkMap(this);
-        map[2].GenerateChunkMap(this);
-        map[3].GenerateChunkMap(this);
-        map[4].GenerateChunkMap(this);
+
+        //map[1].GenerateChunkMap(this);
+        //map[2].GenerateChunkMap(this);
+        //map[3].GenerateChunkMap(this);
+        //map[4].GenerateChunkMap(this);
 
     }
 
