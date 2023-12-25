@@ -4,90 +4,235 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+
 public class World_Generator : MonoBehaviour
 {
     //player to locate
-    public GameObject player_entity;
+    public GameObject PlayerEntity;
     //collect the spawn catalogue
-    public GameObject street_straight;
-    public GameObject street_curve;
-    public GameObject street_tSection;
-    public GameObject street_4Way;
-    public GameObject street_empty;
+    public GameObject streetStraight;
+    public GameObject streetCurve;
+    public GameObject streetTSection;
+    public GameObject street4Way;
+    public GameObject streetEmpty;
 
-    public List<MapChunk> map;
+    public enum Connection_Type { closed, open }
+    public enum Direction { Bottom, Left, Top, Right}
+    public static Direction GetOppositeDirection(Direction direction)
+    {
+        switch (direction)
+        {
+            case Direction.Bottom:
+                return Direction.Top;
+            case Direction.Left:
+                return Direction.Right;
+            case Direction.Top:
+                return Direction.Bottom;
+            case Direction.Right:
+                return Direction.Left;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+        }
+    }
+    public List<Chunk> Map;
     const int _ChunkSize = 3;
 
-    //type, rotation, locationX, locationY
-
-    public class MapChunk
+    public class Connection
     {
-        //map informations
-        public StreetTile[,] ChunkMapArray;
-        public Vector3 Position;
-        //connection point informations
-        public List<int> ConnectionPoints_Left;
-        bool external_left = false;
-        public List<int> ConnectionPoints_Right;
-        bool external_right = false;
-        public List<int> ConnectionPoints_Top;
-        bool external_top = false;
-        public List<int> ConnectionPoints_Bottom;
-        bool external_bottom = false;
-
-        public MapChunk(int X, int Y, int Z) //initializer for Class - needs to take in already existing map connections
+        private bool _fixed;
+        public bool Fixed
         {
-            this.ChunkMapArray = new StreetTile[_ChunkSize, _ChunkSize];
-            //location of the chunks bottom left corner
-            this.Position = new Vector3(X, Y, Z);            
-        }
-
-        public void Force_AddTile(GameObject type, int rotation, int posX, int posY) //place a new spawned pre-defined tile into the chunk 
-        {
-            GameObject NewTile = Instantiate(type);
-            NewTile.name = "Street at " + "X:" + posX + "Y:" + posY;
-            Vector3 spawnPoint = new(this.Position.x + 25f * posX, 0, this.Position.y + 25f * posY);
-            StreetTile newStreet = new(NewTile, spawnPoint, rotation, posX, posY);
-            this.ChunkMapArray[posX, posY] = newStreet;
-        }
-
-        
-
-        public void SetConnectionPoints(int side, List<int> ConnectionLocations)
-        {
-            //side 0 = bottom
-            //side 1 = right
-            //side 2 = top
-            //side 3 = left
-            if (side == 0) { this.ConnectionPoints_Bottom = ConnectionLocations; this.external_bottom = true; }
-            if (side == 1) { this.ConnectionPoints_Right = ConnectionLocations; this.external_right = true; }
-            if (side == 2) { this.ConnectionPoints_Top = ConnectionLocations; this.external_top = true; }
-            if (side == 3) { this.ConnectionPoints_Left = ConnectionLocations; this.external_left = true; }
-        }
-
-        public List<int> GetConnectionPoints(int side)
-        {
-            //todo
-            return new List<int>();
-        }
-
-        public bool RemoveTile(int x, int y)
-        {
-            if (ChunkMapArray[x, y].DestroyObject() == true)
+            get { return _fixed; }
+            set
             {
-                Debug.Log("Tile: X-" + x + " Y-" + y + " has been removed!");
-                ChunkMapArray[x, y] = null;
-                return true;
+                if (_fixed) { throw new Exception("Can't edit a fixed Connection!"); }
+                _fixed = value;
             }
-            return false;
         }
 
-        public void GenerateChunkMap(World_Generator instance, GameObject ChunkType = null)
+        private Connection_Type _type;
+        public Connection_Type Type
         {
-            Debug.Log(this.ChunkMapArray.GetLength(0));
+            get { return _type; }
+            set
+            {
+                if (_fixed) { throw new Exception("Can't edit a fixed Connection!"); }
+                _type = value;
+            }
         }
 
-        private GameObject GetRandomStreetType(World_Generator instance)
+        public Connection(Connection_Type conType = Connection_Type.closed, bool isFixed = false)
+        {
+            _type = conType;
+            _fixed = isFixed;
+        }
+    }
+
+    public class Tile
+    {
+        public GameObject GameObject;
+        public Vector3 Position;
+        public int Rotation;
+        public Tile PreviousTile;
+
+        private Connection[] connections;
+
+        public Connection Connection(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.Bottom:
+                    return connections[0];
+                case Direction.Right:
+                    return connections[1];
+                case Direction.Top:
+                    return connections[2];
+                case Direction.Left:
+                    return connections[3];
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+            }
+        }
+
+        public Tile(GameObject StreetObject, Vector3 SpawnPoint, int Rotation, Tile PreviousTile = null) 
+        {
+            this.Position = SpawnPoint;
+            if(Rotation > 3 || Rotation < 0) { throw new ArgumentOutOfRangeException("Rotation has to be 0-3"); }
+            this.Rotation = Rotation;
+            this.PreviousTile = PreviousTile;
+            //generate 4 connections for each tile, have them standart be closed, for now
+            this.connections = new Connection[4];
+            for (int i = 0; i < 4; i++)
+            {
+                this.connections[i] = new Connection(Connection_Type.closed);
+            }
+
+            //place the StreetObject propperly, depending on the rotation and set open connections
+            this.GameObject = StreetObject;
+            if (StreetObject.CompareTag("streetStreight"))
+            {
+                if (this.Rotation == 0 || this.Rotation == 2)
+                {
+                    this.Connection(Direction.Top).Type = Connection_Type.open;
+                    this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                    this.GameObject.name += " - Streight down<>up";
+                    this.GameObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 1 || this.Rotation == 3)
+                {
+                    this.Connection(Direction.Left).Type = Connection_Type.open;
+                    this.Connection(Direction.Right).Type = Connection_Type.open;
+                    this.GameObject.name += " - Streight left<>right";
+                    this.GameObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+            }
+            else if (StreetObject.CompareTag("streetCurve"))
+            {
+                if (this.Rotation == 0) //bottom to right 
+                {
+                    this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                    this.Connection(Direction.Right).Type = Connection_Type.open;
+                    this.GameObject.name += " - Curve bottom->right";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 1) //bottom to left 
+                {
+                    this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                    this.Connection(Direction.Left).Type = Connection_Type.open;
+                    this.GameObject.name += " - Curve left->bottom";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 2) //top to left 
+                {
+                    this.Connection(Direction.Top).Type = Connection_Type.open;
+                    this.Connection(Direction.Left).Type = Connection_Type.open;
+                    this.GameObject.name += " - Curve top->left";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 3) //top to right 
+                {
+                    this.Connection(Direction.Top).Type = Connection_Type.open;
+                    this.Connection(Direction.Right).Type = Connection_Type.open;
+                    this.GameObject.name += " - Curve Top->Right";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+            }
+            else if (StreetObject.CompareTag("streetTSection"))
+            {
+                if(this.Rotation == 0) // right -> Top and Bottom
+                {
+                    this.Connection(Direction.Right).Type = Connection_Type.open;
+                    this.Connection(Direction.Top).Type = Connection_Type.open;
+                    this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                    this.GameObject.name += " - TSection bottom->top<>right";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 1) // Bottom -> Left and Right
+                {
+                    this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                    this.Connection(Direction.Right).Type = Connection_Type.open;
+                    this.Connection(Direction.Left).Type = Connection_Type.open;
+                    this.GameObject.name += "- TSection bottom->left <> right";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 2) //left -> bottom and Top
+                {
+                    this.Connection(Direction.Left).Type = Connection_Type.open;
+                    this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                    this.Connection(Direction.Top).Type = Connection_Type.open;
+                    this.GameObject.name += " - TSection left->bottom<>top";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+                if (this.Rotation == 3) //top -> right and left
+                {
+                    this.Connection(Direction.Top).Type = Connection_Type.open;
+                    this.Connection(Direction.Left).Type = Connection_Type.open;
+                    this.Connection(Direction.Right).Type = Connection_Type.open;
+                    this.GameObject.name += " - TSection top->right<>left";
+                    this.GameObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, this.Rotation * 90, 0));
+                }
+            } 
+            else if (StreetObject.CompareTag("street4Way")) 
+            {
+                this.Connection(Direction.Top).Type = Connection_Type.open;
+                this.Connection(Direction.Left).Type = Connection_Type.open;
+                this.Connection(Direction.Right).Type = Connection_Type.open;
+                this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                this.GameObject.name += " - 4WayStreet";
+                this.GameObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, 0, 0));
+            }
+            else if (StreetObject.CompareTag("streetEmpty"))
+            {
+                this.Connection(Direction.Top).Type = Connection_Type.open;
+                this.Connection(Direction.Left).Type = Connection_Type.open;
+                this.Connection(Direction.Right).Type = Connection_Type.open;
+                this.Connection(Direction.Bottom).Type = Connection_Type.open;
+                this.GameObject.name += " - empty Tile";
+                this.GameObject.transform.SetPositionAndRotation(new(this.Position.x, this.Position.y, this.Position.z), Quaternion.Euler(0, 0, 0));
+            }
+            else
+            {
+                Debug.Log("Init of StreetTile failed!!!");
+            }
+        }
+    }
+
+    public class Chunk 
+    {
+        private int ChunkID = 0;
+        private static int ChunkCounter = 0;
+        public Tile[,] ChunkMap;
+        public Vector3 Position;
+
+        public Chunk(Vector3 SpawnPoint)
+        {
+            this.Position = SpawnPoint;
+            this.ChunkMap = new Tile[_ChunkSize, _ChunkSize];
+            ChunkID = ChunkCounter;
+            ChunkCounter++;
+        }
+
+        private static GameObject GetRandomStreetType(World_Generator instance)
         {
             System.Random random = new();
             int randomIndex = random.Next(4); // 0 to 3
@@ -95,337 +240,149 @@ public class World_Generator : MonoBehaviour
             switch (randomIndex)
             {
                 case 0:
-                    return instance.street_straight;
+                    return instance.streetStraight;
                 case 1:
-                    return instance.street_curve;
+                    return instance.streetCurve;
                 case 2:
-                    return instance.street_tSection;
+                    return instance.streetTSection;
                 case 3:
-                    return instance.street_4Way;
+                    return instance.street4Way;
                 default:
-                    return instance.street_4Way; // Default to straight street if something goes wrong
+                    return instance.street4Way; // Default to straight street if something goes wrong
             }
         }
 
-        private bool CheckMapFilled()
+        public void AddTile(GameObject type, int Rotation, int X, int Y, float Z = 0)
         {
-            bool full = true;
-            for (int x = 0; x < _ChunkSize; x++)
+            GameObject NewTileObject = Instantiate(type);
+            //NewTileObject.SetActive(false);
+            NewTileObject.name = $"Chunk: {ChunkID} - Street at (X:{X}, Y:{Y})";
+            Vector3 SpawnPoint = new(this.Position.x + 25f * X, Z, this.Position.y + 25f * Y);
+            Tile newTile = new(NewTileObject, SpawnPoint, Rotation);
+            this.ChunkMap[X, Y] = newTile;
+        }
+
+        public void RemoveTile(int X, int Y)
+        {
+            if (this.ChunkMap[X, Y] != null)
             {
-                for (int y = 0; y < _ChunkSize; y++)
+                Destroy(this.ChunkMap[X, Y].GameObject);
+                this.ChunkMap[X, Y] = null;
+            }
+        }
+
+        public void RotateTile(int X, int Y, int newRotation)
+        {
+            GameObject Type = this.ChunkMap[X, Y].GameObject;
+            float Z = this.ChunkMap[X, Y].GameObject.transform.position.y;
+
+            this.RemoveTile(X, Y);
+            this.AddTile(Type, newRotation, X, Y, Z);
+        }
+
+        public void DEBUG_FillMap(World_Generator instance, int Rotation = -1, GameObject StreetType = null)
+            //debug function to fill map with random or specific Tiles
+        {
+            
+            for (int X = 0; X < _ChunkSize; X++)
+            {
+                for(int Y = 0; Y < _ChunkSize; Y++)
                 {
-                    if (this.ChunkMapArray[x, y] != null)
-                    {
-                        full = false;
-                        break;
-                    }
-                }
-            }
-            return full;
-        }
+                    int RandomRotation;
+                    GameObject RandomStreetType;
+                    if (Rotation == -1) { RandomRotation = UnityEngine.Random.Range(0, 4); }
+                    else { RandomRotation = Rotation; }
 
-        private List<int> GetTileConnections(int posX, int posY)
-        {
-            //0 - bottom || 4 - bottom optional 
-            //1 - right  || 5 - right optional
-            //2 - top    || 6 - top optional
-            //3 - left   || 7 - left optional
-            List<int> connectionList = new();
-
-            if(posX + 1 == this.ChunkMapArray.GetLength(0)) { connectionList.Add(5); }
-            if(posX - 1 < 0) { connectionList.Add(7); }
-            if(posY + 1 == this.ChunkMapArray.GetLength(1)) { connectionList.Add(6); }
-            if(posY - 1 < 0) { connectionList.Add(4); }
-
-            if (this.ChunkMapArray[posX, posY + 1].Connection_Bottom) { connectionList.Add(2); }
-            if (this.ChunkMapArray[posX, posY - 1].Connection_Top) { connectionList.Add(0); }
-            if (this.ChunkMapArray[posX + 1, posY].Connection_Top) { connectionList.Add(3); }
-            if (this.ChunkMapArray[posX - 1, posY].Connection_Top) { connectionList.Add(1); }
-
-            return connectionList;
-        }
-    }
-
-    public class StreetTile
-    {
-        public GameObject GrafikObject;
-        public Vector3 Position;
-        public int Rotation;
-
-        public bool Connection_Top = false;
-        public bool Connection_Bottom = false;
-        public bool Connection_Left = false;
-        public bool Connection_Right = false;
-        //own location in map array
-        public int self_x;
-        public int self_y;
-        //prevois tile
-        public int previous_x;
-        public int previous_y;
+                    if (StreetType == null) { RandomStreetType = GetRandomStreetType(instance); }
+                    else { RandomStreetType = StreetType; }
 
 
-
-        public StreetTile(GameObject StreetObject, Vector3 SpawnPoint, int Rotation, int curX, int curY, int prevX = -1, int prevY = -1)
-        {
-            this.Position = SpawnPoint;
-            this.Rotation = Rotation;
-            this.self_x = curX;
-            this.self_y = curY;
-
-            if(prevX != -1 && prevY != -1)
-            {
-                this.previous_x = prevX;
-                this.previous_y = prevY;
-            }
-
-            if (StreetObject.CompareTag("streetStreight"))
-            {
-                if (Rotation == 0 || Rotation == 2)
-                {
-                    this.Connection_Top = true;
-                    this.Connection_Bottom = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - Streight down<>up";
-                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
                     
-                    //todo rotation and positions
+                    if (this.ChunkMap[X,Y] == null) { AddTile(RandomStreetType, RandomRotation, X, Y); }
                 }
-                if (Rotation == 1 || Rotation == 3)
-                {
-                    this.Connection_Left = true;
-                    this.Connection_Right = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - Streight left<>right";
-                    GrafikObject.transform.SetPositionAndRotation(this.Position, Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and positions
-                }
-            }
-            else if (StreetObject.CompareTag("streetCurve"))
-            {
-                if (Rotation == 0) //bottom to right
-                {
-                    this.Connection_Bottom = true;
-                    this.Connection_Right = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - Curve bottom->right";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-                if (Rotation == 1) //right to top
-                {
-                    this.Connection_Left = true;
-                    this.Connection_Bottom = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - Curve left->bottom";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-                if (Rotation == 2) //top to left
-                {
-                    this.Connection_Top = true;
-                    this.Connection_Left = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - Curve top->left";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-                if (Rotation == 3) //left to bottom
-                {
-                    this.Connection_Right = true;
-                    this.Connection_Top = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - Curve right->top";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-            }
-            else if (StreetObject.CompareTag("streetTSection"))
-            {
-                if (Rotation == 0) // bottom to left and right
-                {
-                    this.Connection_Right = true;
-                    this.Connection_Top = true;
-                    this.Connection_Bottom = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - TSection right->top<>bottom";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x + 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-                if (Rotation == 1) // right to top and bottom
-                {
-                    this.Connection_Bottom = true;
-                    this.Connection_Right = true;
-                    this.Connection_Left = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - TSection bottom->left<>right";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x+12.5f, this.Position.y, this.Position.z-12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-                if (Rotation == 2) // top to right and left
-                {
-                    this.Connection_Left = true;
-                    this.Connection_Bottom = true;
-                    this.Connection_Top = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - TSection left->bottom<>top";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z - 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-                if (Rotation == 3) //left to bottom and top
-                {
-                    this.Connection_Top = true;
-                    this.Connection_Left = true;
-                    this.Connection_Right = true;
-                    this.GrafikObject = StreetObject;
-                    GrafikObject.name += " - TSection top->right<>left";
-                    GrafikObject.transform.SetPositionAndRotation(new(this.Position.x - 12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, Rotation * 90, 0));
-                    //todo rotation and position
-                }
-            }
-            else if (StreetObject.CompareTag("street4Way"))
-            {
-                this.Connection_Left = true;
-                this.Connection_Right = true;
-                this.Connection_Bottom = true;
-                this.Connection_Top = true;
-                this.GrafikObject = StreetObject;
-                GrafikObject.name += " - 4WayStreet";
-                GrafikObject.transform.SetPositionAndRotation(new(this.Position.x+12.5f, this.Position.y, this.Position.z + 12.5f), Quaternion.Euler(0, 0, 0));
-                //todo rotation and position
-            }
-            else
-            {
-                Debug.Log("Init of StreetTile failed!!!");
             }
         }
 
-        public bool DoesTileConnect(StreetTile CompareTile = null, int side = -1) //checks if the two tiles in question connect to one another or if an external connection exists
-        {
-            if(CompareTile != null)
+        public bool CheckTileConnected(int X, int Y, Direction direction)  
+            // function to check if a tile is connected propperly in a given direction...  
+            // true, connections are satisfied (eg open connects to open or closed connects to closed)
+        {            
+            // code to calculate the cordinates of the neighboring tile
+            int neighborX = X + (direction == Direction.Left ? -1: (direction == Direction.Right ? 1 : 0)); 
+            int neighborY = Y + (direction == Direction.Bottom ? -1: (direction == Direction.Top ? 1 : 0));
+            // x is left and right
+            // y is up and down
+            Direction RevDir = GetOppositeDirection(direction);
+            //check if the neighbor cordinates are within the chunk
+            if(neighborX >= 0 && neighborX < _ChunkSize && neighborY >= 0 && neighborY < _ChunkSize)
             {
-                if (this.self_x < CompareTile.self_x && this.self_y == CompareTile.self_y) 
-                {
-                    if (this.Connection_Right == true && CompareTile.Connection_Left == true) { return true; } 
-                }
-                if (this.self_x > CompareTile.self_x && this.self_y == CompareTile.self_y)
-                {
-                    if (this.Connection_Left == true && CompareTile.Connection_Right == true) { return true; }
-                }
-                if (this.self_y < CompareTile.self_y && this.self_x == CompareTile.self_x)
-                {
-                    if (this.Connection_Top == true && CompareTile.Connection_Bottom == true) { return true; }
-                }
-                if (this.self_y > CompareTile.self_y && this.self_x == CompareTile.self_x)
-                {
-                    if (this.Connection_Bottom == true && CompareTile.Connection_Top == true) { return true; }
-                }
-                return false;
+                if(this.ChunkMap[neighborX, neighborY] == null) { return false; }
+                if (this.ChunkMap[neighborX, neighborY].Connection(RevDir).Type == 
+                    this.ChunkMap[X, Y].Connection(direction).Type) 
+                { return true; }
             }
-            else if(side != -1)
-            {
-                //side 0 = bottom
-                //side 1 = right
-                //side 2 = top
-                //side 3 = left
-                if (this.Connection_Bottom == true && side == 0) { return true; }
-                if (this.Connection_Right == true && side == 1) { return true; }
-                if (this.Connection_Top == true && side == 2) { return true; }
-                if (this.Connection_Left == true && side == 3) { return true; }
-                return false;
-            }
-            else { return false; }
-        }
-
-        public bool DoesTileFit(StreetTile CompareTile) //checks if both tiles are next to one another without having a connection expectation from either
-        {
-            Vector3 myTile = this.GrafikObject.transform.position;
-            Vector3 myComp = CompareTile.GrafikObject.transform.position;
-
-            if (myTile.x < myComp.x || myTile.z == myComp.z)
-            {
-                //tile is to the right
-                if (CompareTile.Connection_Right == false && this.Connection_Left == false)
-                {
-                    //tile fits
-                    return true;
-                }
-            }
-            if (myTile.x > myComp.x || myTile.z == myComp.z)
-            {
-                //tile is to the left
-                if (CompareTile.Connection_Left == false && this.Connection_Right == false)
-                {
-                    //tile fits
-                    return true;
-                }
-            }
-            if (myTile.z < myComp.z || myTile.x == myComp.x)
-            {
-                //tile is to the top
-                if (CompareTile.Connection_Top == false && this.Connection_Bottom == false)
-                {
-                    //tile fits
-                    return true;
-                }
-            }
-            if (myTile.z > myComp.z || myTile.x == myComp.x)
-            {
-                //tile is to the bottom
-                if (CompareTile.Connection_Bottom == false && this.Connection_Top == false)
-                {
-                    //tile fits
-                    return true;
-                }
-            }
+            //todo add check if tile connection is valid in between chunks
             return false;
         }
 
-        public bool DestroyObject()
+        public List<Direction> FindOpenConnection(int X, int Y)
         {
-            GrafikObject.SetActive(false);
-            Destroy(GrafikObject);
-            if(GrafikObject.IsDestroyed())
+            List<Direction> returnValues = new List<Direction>();
+
+            foreach (Direction direction in Enum.GetValues(typeof(Direction))) 
             {
-                return true;
+                if (this.ChunkMap[X, Y].Connection(direction).Type == Connection_Type.open)
+                {
+                    if (this.CheckTileConnected(X,Y,direction) == false)
+                    {
+                        returnValues.Add(direction);
+                    }
+                    
+                }
             }
-            else
-            {
-                return false;
-            }
+
+            return returnValues;
         }
     }
-
 
 
     // Start is called before the first frame update
     void Start()
     {
-        map = new List<MapChunk>();
-        MapChunk myTest = new(0, 0, 0);
-        //MapChunk myTest2 = new(110, 0, 0);
-        //MapChunk myTest3 = new(-110, 0, 0);
-        //MapChunk myTest4 = new(0, 110, 0);
-        //MapChunk myTest5 = new(0, -110, 0);
+        Map = new();
+        Chunk TestChunk = new(new Vector3(0, 0, 0));
+        Chunk TestChunk2 = new(new Vector3(-80, 0, 0));
+        Map.Add(TestChunk);
+        Map.Add(TestChunk2);
+        Map[1].DEBUG_FillMap(this, 0, street4Way);
+        Map[0].AddTile(street4Way, 0, 0, 0);
+        Map[0].AddTile(streetStraight, 1, 1, 0);
+        //Map[0].AddTile(streetStraight, 1, 2, 0);
+        //Map[0].DEBUG_FillMap(this);
 
-        map.Add(myTest);
-        //map.Add(myTest2);
-        //map.Add(myTest3);
-        //map.Add(myTest4);
-        //map.Add(myTest5);
-        //map[0].Force_AddTile(street_straight, 0, 0, 0);
-        map[0].GenerateChunkMap(this);
+        //Debug.Log($"Top Connection: {Map[0].CheckTileConnected(0, 0, Direction.Top)}");
+        //Debug.Log($"Right Connection: {Map[0].CheckTileConnected(0, 0, Direction.Right)}");
+        //-Map[0].ChunkMap[0, 0].Connection(Direction.Bottom).Type = Connection_Type.closed;
+        //Map[0].ChunkMap[0, 0].Connection(Direction.Left).Type = Connection_Type.closed;
+        List<Direction> test = Map[0].FindOpenConnection(0, 0);
+        Debug.Log($"Open Connections: {test.Count}");
+        foreach(Direction direction in test)
+        {
+            Debug.Log($"Direction: {direction} is open.");
+        }
 
-        //map[1].GenerateChunkMap(this);
-        //map[2].GenerateChunkMap(this);
-        //map[3].GenerateChunkMap(this);
-        //map[4].GenerateChunkMap(this);
 
     }
 
     // Update is called once per frame
     void Update()
     {
-  
+        //Map[0].RotateTile(1, 1, UnityEngine.Random.Range(0, 4));
+        //Map[0].RotateTile(0, 1, UnityEngine.Random.Range(0, 4));
+        //Map[0].RotateTile(2, 2, UnityEngine.Random.Range(0, 4));
+
+
+
     }
 
 
