@@ -94,6 +94,27 @@ public class World_Generator : MonoBehaviour
             }
         }
 
+        public void ReplaceConnection(Direction direction, Connection connection)
+        {
+            switch (direction)
+            {
+                case Direction.Bottom:
+                    connections[0] = connection;
+                    break;
+                case Direction.Right:
+                    connections[1] = connection;
+                    break;
+                case Direction.Top:
+                    connections[2] = connection;
+                    break;
+                case Direction.Left:
+                    connections[3] = connection;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+            }
+        }
+
         public Tile(GameObject StreetObject, Vector3 SpawnPoint, int Rotation, Tile PreviousTile = null) 
         {
             this.Position = SpawnPoint;
@@ -236,7 +257,7 @@ public class World_Generator : MonoBehaviour
                 this.borderConnections[directionIndex] = new Connection[_ChunkSize];
                 for (int con = 0; con < _ChunkSize; con++)
                 {
-                    this.borderConnections[directionIndex][con] = new Connection();
+                    this.borderConnections[directionIndex][con] = new Connection(Connection_Type.closed); //add border connections standart closed
                 }
             }
             ChunkID = ChunkCounter;
@@ -246,19 +267,42 @@ public class World_Generator : MonoBehaviour
         public Connection[] Connections(Direction direction)
         {
             Connection[] returnValues = new Connection[_ChunkSize];
-            for(int i = 0; i < _ChunkSize; i++)
+
+            switch (direction)
             {
-                if (direction == Direction.Left)         { returnValues[i] = this.ChunkMap[0, i].Connection(direction); }
-                else if (direction == Direction.Right)   { returnValues[i] = this.ChunkMap[_ChunkSize - 1, i].Connection(direction); }
-                else if (direction == Direction.Top)     { returnValues[i] = this.ChunkMap[i, _ChunkSize - 1].Connection(direction); }
-                else if (direction == Direction.Bottom)  { returnValues[i] = this.ChunkMap[i, 0].Connection(direction); }
+                case Direction.Left:
+                    for (int i = 0; i < _ChunkSize; i++)
+                    {
+                        returnValues[i] = borderConnections[3][i];
+                    }
+                    break;
+                case Direction.Right:
+                    for (int i = 0; i < _ChunkSize; i++)
+                    {
+                        returnValues[i] = borderConnections[1][i];
+                    }
+                    break;
+                case Direction.Top:
+                    for (int i = 0; i < _ChunkSize; i++)
+                    {
+                        returnValues[i] = borderConnections[2][i];
+                    }
+                    break;
+                case Direction.Bottom:
+                    for (int i = 0; i < _ChunkSize; i++)
+                    {
+                        returnValues[i] = borderConnections[0][i];
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
-            return //todo rework !!! returnValues;
+
+            return returnValues;
         }
 
-        
 
-        private static GameObject GetRandomStreetType(World_Generator instance)
+        public static GameObject GetRandomStreetType(World_Generator instance)
         {
             System.Random random = new();
             int randomIndex = random.Next(4); // 0 to 3
@@ -278,18 +322,97 @@ public class World_Generator : MonoBehaviour
             }
         }
 
-        public bool AddTile(GameObject type, int Rotation, int X, int Y, float Z = 0)
+        public bool AddTile(GameObject type, int Rotation, int X, int Y, float Z = 0, bool ForceAddTile = false, Tile PreviousTile = null)
         {
-            //check if tile connections are superimposed!
+            //check if tile connections are superimposed! 
+            //superimposed are either by already existing or by border connections
             //if... then see if the tile is going to fit
             //if not... abbort...
             //if 
+
+            //check if there is already a tile in the location we are trying to spawn a new one into.
+            if (this.ChunkMap[X, Y] != null & ForceAddTile == false)
+            {
+                Debug.Log($"Failed to create a tile at X: {X}, Y: {Y} in Chunk: {ChunkID}! There is already a tile!");
+                return false;
+            }
+
+            //Spawns the new tile (for now)
+            //create a new instance of the street object the tile is based on
             GameObject NewTileObject = Instantiate(type);
-            //NewTileObject.SetActive(false);
+            //name the tile
             NewTileObject.name = $"Chunk: {ChunkID} - Street at (X:{X}, Y:{Y})";
+            //calculate the location the tile is going to be set to (global location)
             Vector3 SpawnPoint = new(this.Position.x + 25f * X, Z, this.Position.y + 25f * Y);
-            Tile newTile = new(NewTileObject, SpawnPoint, Rotation);
+            //generate tile object
+            Tile newTile = new(NewTileObject, SpawnPoint, Rotation, PreviousTile);
+            //add tile to map
             this.ChunkMap[X, Y] = newTile;
+
+            //tile is forced to be generated, skip the fitting checks
+            if(ForceAddTile == true) { return true; }
+            //now that this tile exists and has properties, try and find out if the tile fits into the location (due to connections)
+            if(X == 0) 
+            {
+                //meaning this connection is superimposing the tile, if the tiles connection do not meet the needed connections, the tile it going to get thrown
+                if (this.Connections(Direction.Left)[Y].Fixed == true)
+                {
+                    //check if the tile and the connections required are the same or not
+                    if(this.Connections(Direction.Left)[Y].Type != this.ChunkMap[X, Y].Connection(Direction.Left).Type)
+                    {
+                        this.RemoveTile(X, Y);
+                        Debug.Log($"Failed to add a tile at X: {X}, Y: {Y} in Chunk: {ChunkID}! Tile in Direction {Direction.Left} is fixed!");
+                        return false;
+                    }
+                }
+                this.ChunkMap[X, Y].ReplaceConnection(Direction.Left, this.Connections(Direction.Left)[Y]);
+            }
+            if(X == _ChunkSize-1)
+            {
+                //meaning this connection is superimposing the tile, if the tiles connection do not meet the needed connections, the tile it going to get thrown
+                if (this.Connections(Direction.Right)[Y].Fixed == true)
+                {
+                    //check if the tile and the connections required are the same or not
+                    if (this.Connections(Direction.Right)[Y].Type != this.ChunkMap[X, Y].Connection(Direction.Right).Type)
+                    {
+                        this.RemoveTile(X, Y);
+                        Debug.Log($"Failed to add a tile at X: {X}, Y: {Y} in Chunk: {ChunkID}! Tile in Direction {Direction.Right} is fixed!");
+                        return false;
+                    }
+                }
+                this.ChunkMap[X, Y].ReplaceConnection(Direction.Right, this.Connections(Direction.Right)[Y]);
+            }
+            if(Y == 0)
+            {
+                //meaning this connection is superimposing the tile, if the tiles connection do not meet the needed connections, the tile it going to get thrown
+                if (this.Connections(Direction.Bottom)[X].Fixed == true)
+                {
+                    //check if the tile and the connections required are the same or not
+                    if (this.Connections(Direction.Bottom)[X].Type != this.ChunkMap[X, Y].Connection(Direction.Bottom).Type)
+                    {
+                        this.RemoveTile(X, Y);
+                        Debug.Log($"Failed to add a tile at X: {X}, Y: {Y} in Chunk: {ChunkID}! Tile in Direction {Direction.Bottom} is fixed!");
+                        return false;
+                    }
+                }
+                this.ChunkMap[X, Y].ReplaceConnection(Direction.Bottom, this.Connections(Direction.Bottom)[X]);
+            }
+            if (Y == _ChunkSize - 1)
+            {
+                //meaning this connection is superimposing the tile, if the tiles connection do not meet the needed connections, the tile it going to get thrown
+                if (this.Connections(Direction.Top)[X].Fixed == true)
+                {
+                    //check if the tile and the connections required are the same or not
+                    if (this.Connections(Direction.Top)[X].Type != this.ChunkMap[X, Y].Connection(Direction.Top).Type)
+                    {
+                        this.RemoveTile(X, Y);
+                        Debug.Log($"Failed to add a tile at X: {X}, Y: {Y} in Chunk: {ChunkID}! Tile in Direction {Direction.Top} is fixed!");
+                        return false;
+                    }
+                }
+                this.ChunkMap[X, Y].ReplaceConnection(Direction.Top, this.Connections(Direction.Top)[X]);
+            }
+            return true;
         }
 
         public void RemoveTile(int X, int Y)
@@ -328,7 +451,11 @@ public class World_Generator : MonoBehaviour
 
 
                     
-                    if (this.ChunkMap[X,Y] == null) { AddTile(RandomStreetType, RandomRotation, X, Y); }
+                    if (this.ChunkMap[X,Y] == null) 
+                    { 
+                        bool WasAdded = AddTile(RandomStreetType, RandomRotation, X, Y);
+                        Debug.Log($"DEBUG_FillMap - was added: {WasAdded}");
+                    }
                 }
             }
         }
@@ -384,24 +511,32 @@ public class World_Generator : MonoBehaviour
         Chunk TestChunk2 = new(new Vector3(-80, 0, 0));
         Map.Add(TestChunk);
         Map.Add(TestChunk2);
-        Map[1].DEBUG_FillMap(this, 0, street4Way);
-        Map[0].AddTile(street4Way, 0, 0, 0);
-        Map[0].AddTile(streetStraight, 0, 0, 1);
-        //Map[0].AddTile(streetStraight, 1, 2, 0);
-        //Map[0].DEBUG_FillMap(this, -1, streetEmpty);
+        //Map[1].DEBUG_FillMap(this, 0, street4Way);
+        Debug.Log("I am here!");
 
-        //Debug.Log($"Top Connection: {Map[0].CheckTileConnected(0, 0, Direction.Top)}");
-        //Debug.Log($"Right Connection: {Map[0].CheckTileConnected(0, 0, Direction.Right)}");
-        //-Map[0].ChunkMap[0, 0].Connection(Direction.Bottom).Type = Connection_Type.closed;
-        //Map[0].ChunkMap[0, 0].Connection(Direction.Left).Type = Connection_Type.closed;
-        List<Direction> test = Map[0].FindOpenConnection(2, 2);
-        Debug.Log($"Open Connections: {test.Count}");
-        foreach(Direction direction in test)
-        {
-            Debug.Log($"Direction: {direction} is open.");
-        }
-        Direction testDirection = Direction.Top;
-        Debug.Log($"Connection {testDirection} is {Map[0].CheckTileConnected(0,0, testDirection)}.");
+        Debug.Log("I am here 2!" + Map[0].Connections(Direction.Left));
+
+        Map[0].AddTile(Chunk.GetRandomStreetType(this), UnityEngine.Random.Range(0, 4), 2,2);
+
+        Map[0].AddTile(street4Way, 0, 0, 0);
+        Map[0].Connections(Direction.Left)[1].Type = Connection_Type.open;
+        Map[0].Connections(Direction.Left)[1].Fixed = true;
+        Map[0].AddTile(streetStraight, 1, 0, 1);
+        Map[0].AddTile(streetStraight, 1, 2, 0);
+        Map[0].DEBUG_FillMap(this, -1, streetEmpty);
+
+        ////Debug.Log($"Top Connection: {Map[0].CheckTileConnected(0, 0, Direction.Top)}");
+        ////Debug.Log($"Right Connection: {Map[0].CheckTileConnected(0, 0, Direction.Right)}");
+        ////-Map[0].ChunkMap[0, 0].Connection(Direction.Bottom).Type = Connection_Type.closed;
+        ////Map[0].ChunkMap[0, 0].Connection(Direction.Left).Type = Connection_Type.closed;
+        //List<Direction> test = Map[0].FindOpenConnection(2, 2);
+        //Debug.Log($"Open Connections: {test.Count}");
+        //foreach(Direction direction in test)
+        //{
+        //    Debug.Log($"Direction: {direction} is open.");
+        //}
+        //Direction testDirection = Direction.Top;
+        //Debug.Log($"Connection {testDirection} is {Map[0].CheckTileConnected(0,0, testDirection)}.");
 
     }
 
