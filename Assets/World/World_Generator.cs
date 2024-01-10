@@ -16,6 +16,9 @@ public class World_Generator : MonoBehaviour
     public GameObject street4Way;
     public GameObject streetEmpty;
 
+    public int NumberOfTileTypes = 5; //this needs to be adjusted when more tiles are added! both here!!! and in the getRandomTile function!!!
+
+
     public enum Connection_Type { closed, open }
     public enum Direction { Bottom, Left, Top, Right}
     public static Direction GetOppositeDirection(Direction direction)
@@ -305,7 +308,7 @@ public class World_Generator : MonoBehaviour
         public static GameObject GetRandomStreetType(World_Generator instance)
         {
             System.Random random = new();
-            int randomIndex = random.Next(4); // 0 to 3
+            int randomIndex = random.Next(5); // 0 to 4
 
             switch (randomIndex)
             {
@@ -317,6 +320,8 @@ public class World_Generator : MonoBehaviour
                     return instance.streetTSection;
                 case 3:
                     return instance.street4Way;
+                case 4:
+                    return instance.streetEmpty;
                 default:
                     return instance.street4Way; // Default to straight street if something goes wrong
             }
@@ -365,6 +370,7 @@ public class World_Generator : MonoBehaviour
                         return false;
                     }
                 }
+                //border chunk connections get replaced with the directions that are already there
                 this.ChunkMap[X, Y].ReplaceConnection(Direction.Left, this.Connections(Direction.Left)[Y]);
             }
             if(X == _ChunkSize-1)
@@ -460,6 +466,98 @@ public class World_Generator : MonoBehaviour
             }
         }
 
+        public bool FillMap(World_Generator instance)
+        {
+            //search for an unsatisfied tile in the current map
+            int X; int Y;
+            (X, Y) = GetCordsOfUnsatisfiedTile();
+            //there are no more unsatusfied tiles!!!
+            if(X == -1 && Y == -1) { return true; }
+            
+            //get the direction in which to move next
+            List<Direction> directions = this.FindOpenConnection(X, Y);
+            int newSpawnX; int newSpawnY;
+            (newSpawnX, newSpawnY) = GetNeighborCords(X, Y, directions[0]);
+            //when this check is successful, neighbor is out of bounds, should NOT happen!  
+            if (newSpawnX == -1 && newSpawnY == -1) 
+            {
+                Debug.Log("WARNING!!! Fillmap encountered an ERROR!!!");
+                Debug.Log($"FillMap found an open connection from Chunk: {this.ChunkID} X:{X}, Y:{Y} to Direction: {directions[0]} which would be out of bounds of the chunk!!!");
+                return false; 
+            }
+
+
+            List<GameObject> triedTiles = new List<GameObject>();
+
+            while(triedTiles.Count < instance.NumberOfTileTypes)
+            {
+                bool tryagain = false;
+                GameObject tileType = Chunk.GetRandomStreetType(instance);
+                for (int i = 0; i < triedTiles.Count; i++)
+                {
+                    if (triedTiles[i].tag == tileType.tag) 
+                    {
+                        //this tile type has already been tried!!!
+                        tryagain = true;
+                        break;
+                    }
+                }
+                if (tryagain == true) { continue; }
+
+                List<int> triedRotations = new List<int>(); 
+                while(triedRotations.Count < 4)
+                {
+                    int tryRotation = UnityEngine.Random.Range(0, 4);
+                    if(triedRotations.Contains(tryRotation)) { continue; }
+
+                    //try and add a tile
+                    bool WasSuccess = this.AddTile(tileType, tryRotation, newSpawnX, newSpawnY);
+                    //if the tile not able to be placed, try another rotation
+                    if (WasSuccess == false) { triedRotations.Add(tryRotation); }
+                    //if it was successfully placed... try fill map more
+                    else
+                    {
+                        bool mapStatus = FillMap(instance);
+                        //if mapstatus is true, the map has been solved, we can return!
+                        if(mapStatus == true) { return true; }
+                    }
+
+                }
+            }
+           
+            //when all types of tiles have been tried and all rotations have been tried, nothing fits backtrack...
+            return false;
+        }
+
+        private (int, int) GetCordsOfUnsatisfiedTile()
+        {
+            for(int X = 0; X < _ChunkSize; X++)
+            {
+                for (int Y = 0; Y < _ChunkSize; Y++)
+                {
+                    if (this.ChunkMap[X, Y] == null) { continue; }
+                    List<Direction> directions = this.FindOpenConnection(X, Y);
+                    if (directions.Count > 0) { return (X, Y); }
+                }
+            }
+            return (-1, -1);
+        }
+
+        private (int, int) GetNeighborCords(int X, int Y, Direction direction) 
+        {
+            // code to calculate the cordinates of the neighboring tile
+            int neighborX = X + (direction == Direction.Left ? -1 : (direction == Direction.Right ? 1 : 0));
+            int neighborY = Y + (direction == Direction.Bottom ? -1 : (direction == Direction.Top ? 1 : 0));
+            //check if the neighbor cordinates are within the chunk
+            if (neighborX >= 0 && neighborX < _ChunkSize && neighborY >= 0 && neighborY < _ChunkSize)
+            {
+                //return neighbor cords
+                return (neighborX, neighborY);
+            }
+            //return invalid cordinates
+            return (-1, -1);
+        }
+
         public bool CheckTileConnected(int X, int Y, Direction direction)  
             // function to check if a tile is connected propperly in a given direction...  
             // true, connections are satisfied (eg open connects to open or closed connects to closed)
@@ -473,10 +571,9 @@ public class World_Generator : MonoBehaviour
             //check if the neighbor cordinates are within the chunk
             if(neighborX >= 0 && neighborX < _ChunkSize && neighborY >= 0 && neighborY < _ChunkSize)
             {
-                if(this.ChunkMap[neighborX, neighborY] == null) { return false; }
+                if(this.ChunkMap[neighborX, neighborY] == null) { return false; } //when tile non existent, return false
                 if (this.ChunkMap[neighborX, neighborY].Connection(RevDir).Type == 
-                    this.ChunkMap[X, Y].Connection(direction).Type) 
-                { return true; }
+                    this.ChunkMap[X, Y].Connection(direction).Type) { return true; }
             }
             //todo add check if tile connection is valid in between chunks
             return false;
@@ -512,18 +609,36 @@ public class World_Generator : MonoBehaviour
         Map.Add(TestChunk);
         Map.Add(TestChunk2);
         //Map[1].DEBUG_FillMap(this, 0, street4Way);
-        Debug.Log("I am here!");
+        //Debug.Log("I am here!");
 
-        Debug.Log("I am here 2!" + Map[0].Connections(Direction.Left));
+        //Debug.Log("I am here 2!" + Map[0].Connections(Direction.Left));
 
-        Map[0].AddTile(Chunk.GetRandomStreetType(this), UnityEngine.Random.Range(0, 4), 2,2);
+        //Map[0].AddTile(Chunk.GetRandomStreetType(this), UnityEngine.Random.Range(0, 4), 2,2);
 
-        Map[0].AddTile(street4Way, 0, 0, 0);
-        Map[0].Connections(Direction.Left)[1].Type = Connection_Type.open;
-        Map[0].Connections(Direction.Left)[1].Fixed = true;
-        Map[0].AddTile(streetStraight, 1, 0, 1);
-        Map[0].AddTile(streetStraight, 1, 2, 0);
-        Map[0].DEBUG_FillMap(this, -1, streetEmpty);
+        Map[0].AddTile(streetStraight, 0, 0, 0);
+        //Map[0].Connections(Direction.Left)[1].Type = Connection_Type.open;
+        //Map[0].Connections(Direction.Left)[1].Fixed = true;
+        Map[0].AddTile(streetStraight, 0, 0, 1);
+        Debug.Log(Map[0].FindOpenConnection(0, 0).Count);
+
+        Map[0].FillMap(this);
+
+        //Map[0].AddTile(streetStraight, 1, 0, 1);
+        //Map[0].AddTile(streetStraight, 1, 2, 0);
+
+        //DEBUG fill map with empty street
+        //Map[0].DEBUG_FillMap(this, -1, streetEmpty);
+        //Debug fill map with random items
+
+        //Map[0].DEBUG_FillMap(this);
+        //Connection[] test = Map[0].Connections(Direction.Left);
+        //Debug.Log(test.Length);
+        //for(int i = 0; i < test.Length; i++)
+        //{
+        //    Debug.Log(test[i].Type);
+        //}
+
+
 
         ////Debug.Log($"Top Connection: {Map[0].CheckTileConnected(0, 0, Direction.Top)}");
         ////Debug.Log($"Right Connection: {Map[0].CheckTileConnected(0, 0, Direction.Right)}");
