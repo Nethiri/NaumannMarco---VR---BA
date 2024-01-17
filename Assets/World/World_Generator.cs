@@ -307,8 +307,10 @@ public class World_Generator : MonoBehaviour
 
         public static GameObject GetRandomStreetType(World_Generator instance)
         {
-            System.Random random = new();
-            int randomIndex = random.Next(5); // 0 to 4
+            //System.Random random = new();
+            //int randomIndex = random.Next(5); // 0 to 4
+
+            int randomIndex = UnityEngine.Random.Range(0, 5);
 
             switch (randomIndex)
             {
@@ -466,7 +468,7 @@ public class World_Generator : MonoBehaviour
             }
         }
 
-        public bool FillMap(World_Generator instance)
+        public bool FillMap(World_Generator instance, bool Origin = false)
         {
             //search for an unsatisfied tile in the current map
             int X; int Y;
@@ -488,7 +490,7 @@ public class World_Generator : MonoBehaviour
 
 
             List<GameObject> triedTiles = new List<GameObject>();
-
+            
             while(triedTiles.Count < instance.NumberOfTileTypes)
             {
                 bool tryagain = false;
@@ -503,7 +505,7 @@ public class World_Generator : MonoBehaviour
                     }
                 }
                 if (tryagain == true) { continue; }
-
+                
                 List<int> triedRotations = new List<int>(); 
                 while(triedRotations.Count < 4)
                 {
@@ -513,18 +515,21 @@ public class World_Generator : MonoBehaviour
                     //try and add a tile
                     bool WasSuccess = this.AddTile(tileType, tryRotation, newSpawnX, newSpawnY);
                     //if the tile not able to be placed, try another rotation
-                    if (WasSuccess == false) { triedRotations.Add(tryRotation); }
+                    if (WasSuccess == false) { triedRotations.Add(tryRotation); this.RemoveTile(newSpawnX, newSpawnY); }
                     //if it was successfully placed... try fill map more
                     else
                     {
+                        Debug.Log("Initiated another FillMap");
                         bool mapStatus = FillMap(instance);
                         //if mapstatus is true, the map has been solved, we can return!
-                        if(mapStatus == true) { return true; }
+                        if(mapStatus == true) {
+                            if (Origin == true) { this.DEBUG_FillMap(instance, 0, instance.streetEmpty); }
+                            return true; 
+                        }
                     }
-
                 }
+                triedTiles.Add(tileType);
             }
-           
             //when all types of tiles have been tried and all rotations have been tried, nothing fits backtrack...
             return false;
         }
@@ -599,6 +604,92 @@ public class World_Generator : MonoBehaviour
         }
     }
 
+    public class WorldMap
+    {
+        public List<Chunk> Chunks;
+        public float DEBUG_OFFSET = 0;  
+
+        public WorldMap(World_Generator instance)
+        {
+            Chunks = new List<Chunk>();
+            Chunk firstChunk = new(new(0, 0, 0));
+            firstChunk.AddTile(instance.streetStraight, 0, 0, 0);
+            firstChunk.FillMap(instance, true);
+            Chunks.Add(firstChunk);
+        }
+
+        public bool AddChunk(int OriginIndex, Direction direction)
+        {
+            if (this.CheckIfFreeSpace(OriginIndex, direction) == false) { return false; } // could not add chunk space occupied
+            int ChunkOffset = _ChunkSize * 25 + (int)DEBUG_OFFSET;
+
+            //global cord system x and z plane y hight
+            int X = (int)this.Chunks[OriginIndex].Position.x;
+            int Y = (int)this.Chunks[OriginIndex].Position.y;
+            int Z = (int)this.Chunks[OriginIndex].Position.z;
+
+            // code to calculate the cordinates of the neighboring chunk
+            int neighborX = X + (direction == Direction.Left ? -ChunkOffset : (direction == Direction.Right ? ChunkOffset : 0));
+            int neighborZ = Z + (direction == Direction.Bottom ? -ChunkOffset : (direction == Direction.Top ? ChunkOffset : 0));
+
+            //if any chunk occupies the same location as caluclated from the origin chunk, the there is no free space in this direction
+            Vector3 TargetLocation = new(neighborX, Y, neighborZ);
+            Chunk NewChunk = new(TargetLocation);
+            
+            //todo chunk needs to fit to origin / surrounding chunks
+
+
+
+            return false;
+        }
+
+        private bool CheckIfFreeSpace(int ChunkIndex, Direction direction) // need alt function for if I only have a vector and not an index f
+        {
+            int ChunkOffset = _ChunkSize * 25 + (int)DEBUG_OFFSET;
+
+            //global cord system x and z plane y hight
+            int X = (int)this.Chunks[ChunkIndex].Position.x;
+            int Y = (int)this.Chunks[ChunkIndex].Position.y;
+            int Z = (int)this.Chunks[ChunkIndex].Position.z;
+                        
+            // code to calculate the cordinates of the neighboring chunk
+            int neighborX = X + (direction == Direction.Left ? -ChunkOffset : (direction == Direction.Right ? ChunkOffset : 0));
+            int neighborZ = Z + (direction == Direction.Bottom ? -ChunkOffset : (direction == Direction.Top ? ChunkOffset : 0));
+
+            //if any chunk occupies the same location as caluclated from the origin chunk, the there is no free space in this direction
+            Vector3 TargetLocation = new(neighborX, Y, neighborZ);
+            for(int i = 0; i < this.Chunks.Count; i++)
+            {
+                if (this.Chunks[i].Position == TargetLocation) { return false; }
+            }
+            //if no chunk occupying the space if been found, return true
+            return true; 
+        }
+
+        private int GetChunkIndex(Vector3 ChunkLocation)
+        {
+            for (int i = 0; i < this.Chunks.Count; i++)
+            {
+                if (this.Chunks[i].Position == ChunkLocation) { return i; }
+            }
+            return -1;
+        }
+
+        private Connection[] getConnections(Vector3 ChunkLocation, Direction direction)
+        {
+            int ChunkIndex = this.GetChunkIndex(ChunkLocation);
+            //first, check if this chunk exists within the list of chunks
+
+            if(ChunkIndex != -1) { return this.Chunks[ChunkIndex].Connections(direction); }
+            //todo what to do if I dont have an index and I try to get the connections from a theoretical chunk eg one that I want to spawn or that has yet to spawn
+
+
+            return new Connection[this.Chunks.Count];   
+        }
+
+
+    }
+
 
     // Start is called before the first frame update
     void Start()
@@ -608,51 +699,22 @@ public class World_Generator : MonoBehaviour
         Chunk TestChunk2 = new(new Vector3(-80, 0, 0));
         Map.Add(TestChunk);
         Map.Add(TestChunk2);
-        //Map[1].DEBUG_FillMap(this, 0, street4Way);
-        //Debug.Log("I am here!");
-
-        //Debug.Log("I am here 2!" + Map[0].Connections(Direction.Left));
-
-        //Map[0].AddTile(Chunk.GetRandomStreetType(this), UnityEngine.Random.Range(0, 4), 2,2);
-
+        
         Map[0].AddTile(streetStraight, 0, 0, 0);
-        //Map[0].Connections(Direction.Left)[1].Type = Connection_Type.open;
-        //Map[0].Connections(Direction.Left)[1].Fixed = true;
-        Map[0].AddTile(streetStraight, 0, 0, 1);
+        Map[1].AddTile(streetCurve, 1, 1, 1);
+
         Debug.Log(Map[0].FindOpenConnection(0, 0).Count);
 
-        Map[0].FillMap(this);
+        Map[0].FillMap(this, true);
+        Map[1].FillMap(this, true);
 
-        //Map[0].AddTile(streetStraight, 1, 0, 1);
-        //Map[0].AddTile(streetStraight, 1, 2, 0);
-
-        //DEBUG fill map with empty street
-        //Map[0].DEBUG_FillMap(this, -1, streetEmpty);
-        //Debug fill map with random items
-
-        //Map[0].DEBUG_FillMap(this);
-        //Connection[] test = Map[0].Connections(Direction.Left);
-        //Debug.Log(test.Length);
-        //for(int i = 0; i < test.Length; i++)
-        //{
-        //    Debug.Log(test[i].Type);
-        //}
-
-
-
-        ////Debug.Log($"Top Connection: {Map[0].CheckTileConnected(0, 0, Direction.Top)}");
-        ////Debug.Log($"Right Connection: {Map[0].CheckTileConnected(0, 0, Direction.Right)}");
-        ////-Map[0].ChunkMap[0, 0].Connection(Direction.Bottom).Type = Connection_Type.closed;
-        ////Map[0].ChunkMap[0, 0].Connection(Direction.Left).Type = Connection_Type.closed;
-        //List<Direction> test = Map[0].FindOpenConnection(2, 2);
-        //Debug.Log($"Open Connections: {test.Count}");
-        //foreach(Direction direction in test)
-        //{
-        //    Debug.Log($"Direction: {direction} is open.");
-        //}
-        //Direction testDirection = Direction.Top;
-        //Debug.Log($"Connection {testDirection} is {Map[0].CheckTileConnected(0,0, testDirection)}.");
-
+        for(int i = 0; i < 20; i++)
+        {
+            Chunk loopTest = new(new Vector3(80 * i, 0, 80));
+            loopTest.AddTile(Chunk.GetRandomStreetType(this), UnityEngine.Random.Range(0,4), 1,1);
+            loopTest.FillMap(this, true);
+            Map.Add(loopTest);    
+        }
     }
 
     // Update is called once per frame
