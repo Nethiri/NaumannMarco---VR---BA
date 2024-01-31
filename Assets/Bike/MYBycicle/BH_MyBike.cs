@@ -21,6 +21,7 @@ public class BH_MyBike : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Use Byscile script BH_MyBikes.cs");
         rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -31,17 +32,6 @@ public class BH_MyBike : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // Apply motor torque to the back wheel
-        foreach(WheelCollider wheel in wheel_col_back)
-        {
-            wheel.motorTorque = Input.GetAxis("Vertical") * torque;
-        }
-        // Handle front wheel rotation
-        foreach (WheelCollider wheel in wheel_col_front)
-        {
-            wheel.steerAngle = Input.GetAxis("Horizontal") * angle;
-        }
-
         //Debug.Log(rb.velocity.magnitude * 3.6);
 
         // Update the position and rotation of the wheels
@@ -54,6 +44,43 @@ public class BH_MyBike : MonoBehaviour
             wheel_mesh[i].rotation = rot;
         }*/
 
-       
+        //MoveWithViolocityModifier();
+        MoveWithWheelCollider();
+    }
+
+    void MoveWithWheelCollider()
+    {
+        // Apply motor torque to the back wheel
+        foreach (WheelCollider wheel in wheel_col_back)
+        {
+            wheel.motorTorque = Input.GetAxis("Vertical") * torque;
+        }
+        // Handle front wheel rotation
+        foreach (WheelCollider wheel in wheel_col_front)
+        {
+            wheel.steerAngle = Input.GetAxis("Horizontal") * angle;
+        }
+    }
+
+    float movementSpeed = 5f;
+    float rotationDegPerSecond = 90f;
+
+    void MoveWithViolocityModifier()
+    {
+        float horizontalInput = Input.GetAxis("Horizontal"); //up/down
+        float verticalInput = Input.GetAxis("Vertical");
+
+        float xVal = Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed + Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
+        float yVal = Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed - Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
+
+        rb.velocity = new Vector3(
+            x: xVal,
+            y: 0,
+            z: yVal
+            );
+
+        //horizontalInpout * movementSpeed * Mathf.Sin(rb.rotation.y)
+        if (Input.GetKey(KeyCode.Q)) { rb.rotation *= Quaternion.Euler(0f, -(rotationDegPerSecond * Time.deltaTime), 0f); }
+        if (Input.GetKey(KeyCode.E)) { rb.rotation *= Quaternion.Euler(0f, rotationDegPerSecond * Time.deltaTime, 0f); }
     }
 }

@@ -646,7 +646,7 @@ public class World_Generator : MonoBehaviour
                     {
                         bool successful = this.AddTile(instance.streetEmpty, 0, X, Y);
                         if (successful == false) {
-                            Debug.Log("Fillout map failed!");
+                            //Debug.Log("Fillout map failed!");
                             return false; 
                         }
                     }
@@ -733,8 +733,8 @@ public class World_Generator : MonoBehaviour
             {
                 bool firstStileAdded = this.AddTile(Chunk.GetRandomStreetType(instance), UnityEngine.Random.Range(0, 3),
                     UnityEngine.Random.Range(0, _ChunkSize - 1), UnityEngine.Random.Range(0, _ChunkSize - 1));
-                if (firstStileAdded == true) { Debug.Log($"First tile added into Chunk {this.ChunkID}"); this.FillMap(instance, true); }
-                else { Debug.Log($"First tile failed to add to Chunk {this.ChunkID} try again!"); this.FillMap(instance, true); }
+                if (firstStileAdded == true) { /*Debug.Log($"First tile added into Chunk {this.ChunkID}");*/ this.FillMap(instance, true); }
+                else { /*Debug.Log($"First tile failed to add to Chunk {this.ChunkID} try again!");*/ this.FillMap(instance, true); }
             }
 
             //search for an unsatisfied tile in the current map
@@ -845,8 +845,8 @@ public class World_Generator : MonoBehaviour
             {   //adds the ONLY decision block into the chunk FIRST!!!
                 bool firstTileAdded = this.AddTile(this.ChunkType, UnityEngine.Random.Range(0, 3),
                     UnityEngine.Random.Range(0, _ChunkSize - 1), UnityEngine.Random.Range(0, _ChunkSize - 1));
-                if (firstTileAdded == true) { Debug.Log($"First tile added into Chunk {this.ChunkID}"); this.FillMap(instance, true); }
-                else { Debug.Log($"First tile failed to add to Chunk {this.ChunkID} try again!"); this.FillMap(instance, true); }
+                if (firstTileAdded == true) { /*Debug.Log($"First tile added into Chunk {this.ChunkID}");*/ this.FillMap(instance, true); }
+                else { /*Debug.Log($"First tile failed to add to Chunk {this.ChunkID} try again!");*/ this.FillMap(instance, true); }
             }
 
 
@@ -1356,40 +1356,41 @@ public class World_Generator : MonoBehaviour
 
         MyMap = new WorldMap(this, streetTSection, (int)PlayerEntity.transform.position.x, (int)PlayerEntity.transform.position.y, 0);
 
-        var test = MyMap.Chunks[0].Connections(Direction.Right);
-        string connectionString = "";
-        string connectionString2 = "";
-        foreach (var con in test)
-        {
-            connectionString += con.Type + " ";
-            connectionString2 += con.Fixed + " ";
-        }
-        Debug.Log("Connection type: " + connectionString);
-        Debug.Log("Fixed state    : " + connectionString2);
+        //var test = MyMap.Chunks[0].Connections(Direction.Right);
+        //string connectionString = "";
+        //string connectionString2 = "";
+        //foreach (var con in test)
+        //{
+        //    connectionString += con.Type + " ";
+        //    connectionString2 += con.Fixed + " ";
+        //}
+        //Debug.Log("Connection type: " + connectionString);
+        //Debug.Log("Fixed state    : " + connectionString2);
         //Debug.Log("0,0 Bottom: " + MyMap.Chunks[0].ChunkMap[0, 0].Connection(Direction.Bottom).Type);
 
-        MyMap.AddChunk(this, 0, Direction.Top, street4Way);
+        //MyMap.AddChunk(this, 0, Direction.Top, street4Way);
 
-        MyMap.AddChunk(this, 0, Direction.Right, street4Way);
+        //MyMap.AddChunk(this, 0, Direction.Right, street4Way);
 
-        //GameObject somethingDirty = Instantiate(streetStraight);
-        //somethingDirty.name = "SomethingDirty:";
-        //Tile testTile = new(somethingDirty, new(-25, -25, -25), 0);
-        //Debug.Log(testTile.Connection(Direction.Bottom).Type);
+        ////GameObject somethingDirty = Instantiate(streetStraight);
+        ////somethingDirty.name = "SomethingDirty:";
+        ////Tile testTile = new(somethingDirty, new(-25, -25, -25), 0);
+        ////Debug.Log(testTile.Connection(Direction.Bottom).Type);
 
-        MyMap.AddChunk(this, 1, Direction.Right, street4Way);
+        //MyMap.AddChunk(this, 1, Direction.Right, street4Way);
         //MyMap.AddChunk(this, 2, Direction.Right, street4Way);
 
 
-        //for (int i = 3; i < 10; i++)
-        //{
-        //    Direction[] directions = (Direction[])Enum.GetValues(typeof(Direction));
-        //    foreach (Direction Loopdirection in directions)
-        //    {
-        //        MyMap.AddChunk(this, i, Direction.Right, street4Way);
-        //    }
+        for (int i = 0; i < 25; i++)
+        {
+            Direction[] directions = (Direction[])Enum.GetValues(typeof(Direction));
+            foreach (Direction Loopdirection in directions)
+            {
+                MyMap.AddChunk(this, i, Direction.Right, street4Way);
+                MyMap.AddChunk(this, i, Direction.Top, street4Way);
+            }
 
-        //}
+        }
 
 
         //MyMap.AddChunk(this, 1, Direction.Top);
@@ -1409,20 +1410,20 @@ public class World_Generator : MonoBehaviour
     void Update()
     {
         // Update the elapsed time
-        elapsedTime += Time.deltaTime;
+        //elapsedTime += Time.deltaTime;
 
-        // Check if one second has passed
-        if (elapsedTime >= updateInterval)
-        {
-            Debug.Log("try add another chunk");
-            Debug.Log(MyMap.AddChunk(this, TestMapIndex, Direction.Top, street4Way));
-            Debug.Log(MyMap.AddChunk(this, TestMapIndex, Direction.Right, street4Way));
+        //// Check if one second has passed
+        //if (elapsedTime >= updateInterval)
+        //{
+        //    Debug.Log("try add another chunk");
+        //    Debug.Log(MyMap.AddChunk(this, TestMapIndex, Direction.Top, street4Way));
+        //    Debug.Log(MyMap.AddChunk(this, TestMapIndex, Direction.Right, street4Way));
 
 
-            // Reset the timer
-            elapsedTime = 0f;
-            TestMapIndex++;
-        }
+        //    // Reset the timer
+        //    elapsedTime = 0f;
+        //    TestMapIndex++;
+        //}
 
 
         //MyMap = new WorldMap(this, streetTSection, (int)PlayerEntity.transform.position.x, (int)PlayerEntity.transform.position.y, 0);

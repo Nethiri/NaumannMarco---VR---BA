@@ -28,7 +28,7 @@ public class bicycle_behaviour : MonoBehaviour
     float curMaxSpeed = 0;
 
 
-    bool canRequestData = true; // Controls if we can make a request to the server
+    bool canRequestData = false; // Controls if we can make a request to the server
     float requestDataInterval = 0.5f; // Interval to request data from the server (every 0.5 seconds)
 
     void Start()
@@ -60,7 +60,7 @@ public class bicycle_behaviour : MonoBehaviour
 
         rb.velocity = new Vector3(
             x: xVal,
-            y: rb.velocity.y,
+            y: 0,
             z: yVal
             );
 
