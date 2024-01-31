@@ -46,14 +46,23 @@ public class BH_MyBike : MonoBehaviour
 
         //MoveWithViolocityModifier();
         MoveWithWheelCollider();
+        Debug.Log($"Velocity: {rb.velocity.magnitude.ToString("F2")} m/s" );
     }
+
+    float targetSpeedMPS = 8.33333f;
 
     void MoveWithWheelCollider()
     {
         // Apply motor torque to the back wheel
-        foreach (WheelCollider wheel in wheel_col_back)
+        List<WheelCollider> wheels = new List<WheelCollider>();
+        wheels.AddRange(wheel_col_back);
+        //wheels.AddRange(wheel_col_front);
+
+        foreach (WheelCollider wheel in wheels)
         {
-            wheel.motorTorque = Input.GetAxis("Vertical") * torque;
+            float torque = Input.GetAxis("Vertical") * wheel.radius * targetSpeedMPS * wheel.mass;
+            Debug.Log("Torque" + torque.ToString("F2"));
+            wheel.motorTorque = torque;
         }
         // Handle front wheel rotation
         foreach (WheelCollider wheel in wheel_col_front)
