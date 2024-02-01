@@ -336,7 +336,7 @@ async def main():
     if tacxStatus == True:
         tacx_client = await tacx_connect()
         await tacx_set_data_page_handler(tacx_client)
-        await tacx_set_resistance(client=tacx_client, resistance=10)
+        await tacx_set_resistance(client=tacx_client, resistance=30)
         #await tacx_define_road_surface(client=tacx_client, roadType=RoadSurface.CONCRETE_PLATES, roadIntesity=50)
     
     if eliteStatus == True:

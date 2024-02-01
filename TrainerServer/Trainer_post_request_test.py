@@ -2,7 +2,7 @@ import requests
 import json
 
 # Set the resistance value you want
-resistance_value = 30
+resistance_value = 10
 
 # Define the data payload
 data = {

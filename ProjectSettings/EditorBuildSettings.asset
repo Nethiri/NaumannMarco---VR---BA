@@ -11,6 +11,7 @@ EditorBuildSettings:
     Unity.XR.PICO.LivePreview.Settings: {fileID: 11400000, guid: 30086a2a3371f76459769dc8f423bee8, type: 2}
     Unity.XR.PXR.Settings: {fileID: 11400000, guid: 7ed28df0b47f2fb44b1e88b26a28e471, type: 2}
     Varjo.XR.Settings: {fileID: 11400000, guid: 563e0670b3c12384ea52c66b0a3c5d38, type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 0f9ed25c808a5ea459277b271aa85018, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 0bb2bbe82ef3cfa42ac9a6f6ee0e3040, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: e9d6facab3bef2443bd40b72507e1888, type: 2}
     xr.sdk.mock-hmd.settings: {fileID: 11400000, guid: 61b9ab1067441a042b47318ec73e9a5f, type: 2}

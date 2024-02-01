@@ -5,9 +5,9 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEngine.XR;
-//using Varjo.XR;
+using Varjo.XR;
 
-/*
+
 public class scr_main_camera : MonoBehaviour
 {
     public LineRenderer rayRender_Left; // Assign your Line Renderer in the Inspector.
@@ -113,12 +113,12 @@ public class scr_main_camera : MonoBehaviour
 
     }
 }
-*/
 
-public class scr_main_camera : MonoBehaviour
-{
-    void Start()
-    {
-        Debug.Log("The Script scr_main_camera.cs is currently deactivated!!!");
-    }
-}
+
+//public class scr_main_camera : MonoBehaviour
+//{
+//    void Start()
+//    {
+//        Debug.Log("The Script scr_main_camera.cs is currently deactivated!!!");
+//    }
+//}

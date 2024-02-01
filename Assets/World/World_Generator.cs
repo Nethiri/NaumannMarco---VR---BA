@@ -1078,7 +1078,7 @@ public class World_Generator : MonoBehaviour
     public class WorldMap
     {
         public List<Chunk> Chunks;
-        public float DEBUG_OFFSET = 5;
+        public float DEBUG_OFFSET = 0;
         int SpawnLocX, SpawnLocY, SpawnLocZ;
 
         public WorldMap(World_Generator instance, int X = 0, int Y = 0, int Z = 0)
