@@ -6,21 +6,23 @@ using UnityEngine;
 
 public class BH_MyBike : MonoBehaviour
 {
+    public bool readRequestServer = false;
+    public Request_Server_script serverData;
+
+    //bike objects
     public WheelCollider[] wheel_col_front;
     public WheelCollider[] wheel_col_back;
     public GameObject[] FrontWheelObject;
     public GameObject[] BackWheelObject;
     public GameObject[] HandlebarObject;
-
+    //settings - modifyable from the outside
     public Vector3 centerOfMass;
-
-    private Rigidbody rb;
-
-    //public float torque = 2000;
     [Range(0f, 90f)]
     public float SteerAngle = 45;
     [Range(-100f, 100f)]
     public float TargetMpSSpeed = 10f;
+
+    private Rigidbody rb;
 
     // Start is called before the first frame update
     void Start()
@@ -36,79 +38,16 @@ public class BH_MyBike : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Debug.Log(rb.velocity.magnitude * 3.6);
-
-        // Update the position and rotation of the wheels
-        /*for (int i = 0; i < wheel_col.Length; i++)
+        if (rb != null)
         {
-            var pos = transform.position;
-            var rot = transform.rotation;
-            wheel_col[i].GetWorldPose(out pos, out rot);
-            wheel_mesh[i].position = pos;
-            wheel_mesh[i].rotation = rot;
-        }*/
+            rb.centerOfMass = centerOfMass;
+        }
 
-        //MoveWithViolocityModifier();
-        //MoveWithWheelCollider();
-        MoveWithVelocityANDwheels();
+        if (readRequestServer == true) { MoveWithServerData(); }
+        else { MoveWithVelocityANDwheels(); }
+
         Debug.Log($"Velocity: {rb.velocity.magnitude.ToString("F2")} m/s" );
     }
-
-    //float targetSpeedMPS = 8.33333f;
-    //public float multiplyer = 1f;
-    //public bool bothwheels = false;
-    //public float accelerationForce = 10f;
-    ////void MoveWithWheelCollider()
-    ////{
-    ////    // Apply motor torque to the back wheel
-    ////    List<WheelCollider> wheels = new List<WheelCollider>();
-    ////    float verticalInput = Input.GetAxis("Vertical");
-
-    ////    wheels.AddRange(wheel_col_back);
-    ////    if (bothwheels) { wheels.AddRange(wheel_col_front); }
-
-    ////    foreach (WheelCollider wheel in wheels)
-    ////    {
-
-    ////        float torque = Input.GetAxis("Vertical") * wheel.radius * targetSpeedMPS * wheel.mass * multiplyer;
-    ////        Debug.Log(Input.GetAxis("Vertical"));
-    ////        Debug.Log("Torque" + torque.ToString("F2"));
-    ////        wheel.motorTorque = torque;
-    ////    }
-    ////    //Handle front wheel rotation
-
-    ////    foreach (WheelCollider wheel in wheel_col_front)
-    ////    {
-    ////        wheel.steerAngle = Input.GetAxis("Horizontal") * angle;
-    ////    }
-    ////}
-
-    //float movementSpeed = 5f;
-    //float rotationDegPerSecond = 90f;
-
-    //void MoveWithViolocityModifier()
-    //{
-    //    float horizontalInput = 0; // Input.GetAxis("Horizontal"); //left/right
-    //    float verticalInput = Input.GetAxis("Vertical");
-
-    //    float xVal = Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed + Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
-    //    float yVal = Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * verticalInput * movementSpeed - Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * horizontalInput * movementSpeed;
-
-    //    rb.velocity = new Vector3(
-    //        x: xVal,
-    //        y: 0,
-    //        z: yVal
-    //        );
-
-    //    //Vector3 acceleration = new Vector3(x: xVal,y: 0,z: yVal) * verticalInput * accelerationForce;
-    //    //rb.AddForce(acceleration);
-
-    //    //horizontalInpout * movementSpeed * Mathf.Sin(rb.rotation.y)
-    //    if (Input.GetKey(KeyCode.Q)) { rb.rotation *= Quaternion.Euler(0f, -(rotationDegPerSecond * Time.deltaTime), 0f); }
-    //    if (Input.GetKey(KeyCode.E)) { rb.rotation *= Quaternion.Euler(0f, rotationDegPerSecond * Time.deltaTime, 0f); }
-    //}
-
-
 
     void MoveWithVelocityANDwheels()
     {
@@ -128,7 +67,30 @@ public class BH_MyBike : MonoBehaviour
         {
             frontWheel.steerAngle = horizontalInput * SteerAngle;
         }
+    }
 
+    void MoveWithServerData()
+    { 
+        
+        if(serverData.Request_tacx_elapsed_time != 0)
+        {   
+            //calc velocity in driving direction
+            float xVal = Mathf.Sin((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * serverData.Request_tacx_speed;
+            float zVal = Mathf.Cos((rb.rotation.eulerAngles.y * Mathf.PI) / 180) * serverData.Request_tacx_speed;
+            float yVal = 0; // we want to just have speed in the plane
+            //apply the vertical speed to the target (acceleration/deceleration handled by tacx)
+            rb.velocity = new Vector3(xVal, yVal, zVal);
+        }
+
+        
+        if(serverData.Request_elite_last_update != 0)
+        {
+            //lets handle turning through the front wheel collider
+            foreach (WheelCollider frontWheel in wheel_col_front)
+            {
+                frontWheel.steerAngle = serverData.Request_elite_angle;
+            }
+        }
 
     }
 }

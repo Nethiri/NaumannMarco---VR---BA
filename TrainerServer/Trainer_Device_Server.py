@@ -18,7 +18,7 @@ tacxStatus = True
 #Elite Stero
 eliteStatus = True
 #Break Arduino
-arduinoStatus = True
+arduinoStatus = False
 
 #Tax and Elite are connected via Bluetooth
 #their respective clear names (device names) are stored and used in global
@@ -38,6 +38,7 @@ DATAPACKAGE = {
     "tacx_road_feel_intesity": None,
     "elite_angle": None,
     "elite_last_update": None,
+    "break_last_update": None,
     "break_front": None,
     "break_back": None
 }
@@ -288,6 +289,7 @@ async def arduino_task(arduino_port):
 
                 # Update DATAPACKAGE with resistance values
                 global DATAPACKAGE
+                DATAPACKAGE["break_last_update"] = time.time()
                 DATAPACKAGE["break_back"] = back_val
                 DATAPACKAGE["break_front"] = front_val
                 #print(f"DATAPACKAGE: {back_val}")
