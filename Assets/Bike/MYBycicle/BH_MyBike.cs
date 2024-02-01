@@ -23,6 +23,7 @@ public class BH_MyBike : MonoBehaviour
     public float TargetMpSSpeed = 10f;
 
     private Rigidbody rb;
+    public int Break_dead_zone = 30;
 
     // Start is called before the first frame update
     void Start()
@@ -69,6 +70,9 @@ public class BH_MyBike : MonoBehaviour
         }
     }
 
+    private float elapsedTime = 0f;
+    private float updateInterval = 0.25f; // 0.25 second
+
     void MoveWithServerData()
     { 
         
@@ -89,6 +93,22 @@ public class BH_MyBike : MonoBehaviour
             foreach (WheelCollider frontWheel in wheel_col_front)
             {
                 frontWheel.steerAngle = serverData.Request_elite_angle;
+            }
+        }
+
+        if(serverData.Request_break_least_update != 0)
+        {
+            if(serverData.Request_break_back > Break_dead_zone) 
+            {
+                //// Check if one second has passed
+                elapsedTime += Time.deltaTime;
+                if (elapsedTime >= updateInterval)
+                {
+                    if (serverData.Request_break_back > Break_dead_zone && serverData.Request_break_back < 512) { serverData.SetResistance(50); }
+                    else if (serverData.Request_break_back >= 512 && serverData.Request_break_back < 800) { serverData.SetResistance(100); }
+                    else { serverData.SetResistance(150); }
+                }
+                elapsedTime = 0f;
             }
         }
 

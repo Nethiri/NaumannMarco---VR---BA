@@ -18,7 +18,7 @@ tacxStatus = True
 #Elite Stero
 eliteStatus = True
 #Break Arduino
-arduinoStatus = False
+arduinoStatus = True
 
 #Tax and Elite are connected via Bluetooth
 #their respective clear names (device names) are stored and used in global

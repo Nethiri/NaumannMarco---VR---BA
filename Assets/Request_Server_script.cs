@@ -81,25 +81,55 @@ public class Request_Server_script : MonoBehaviour
 
                 }
 
-                if(myData.break_last_update != 0)
+                if (myData.break_last_update != 0)
                 {
                     Request_break_least_update = myData.break_last_update;
                     Request_break_front = myData.break_front;
                     Request_break_back = myData.break_back;
                 }
-
-
-                
-                
-
                 //Debug.Log("elite_angle: " + myData.elite_angle);
-
-
             }
             else
             {
                 Debug.LogError("Error: " + webRequest.error);
             }
+        }
+    }
+
+    public void SetResistance(int resistanceValue)
+    {
+        // Define the data payload
+        string jsonData = "{\"resistance\":" + resistanceValue + "}";
+
+        // Create a UnityWebRequest
+        UnityWebRequest request = UnityWebRequest.Post(RequestServerURL + "set_resistance", "POST");
+
+        // Set the request headers
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        // Convert the JSON data to bytes and set it in the request
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+
+        // Send the request
+        StartCoroutine(SendRequest(request));
+    }
+
+    // Coroutine to send the request and handle the response
+    IEnumerator SendRequest(UnityWebRequest request)
+    {
+        yield return request.SendWebRequest();
+
+        // Check for errors
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("Error: " + request.error);
+        }
+        else
+        {
+            // Print the response
+            Debug.Log("Response: " + request.responseCode + " Response Content: " + request.downloadHandler.text);
         }
     }
 }
